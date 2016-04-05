@@ -64,8 +64,6 @@ const Image = ({ file }) => {
   let type = fileType(buffer);
   if (type) type = type.ext;
 
-  console.log({ file, type });
-
   if (type === 'jpg') {
     return getJPEG(file);
   } else if (type === 'png') {

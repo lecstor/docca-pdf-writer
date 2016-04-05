@@ -1,39 +1,28 @@
 import merge from 'lodash/merge';
 import forEach from 'lodash/forEach';
 import isArray from 'lodash/isArray';
-import get from 'lodash/get';
 import find from 'lodash/find';
-import values from 'lodash/values';
-
-import TTFFont from 'ttfjs';
 
 import Promise from 'bluebird';
 
-import {
-  pdfDict, xref,
-  Catalog, Pages, Page, Stream, Resources, ProcSet, Trailer,
-  Font, FontFile, FontDescriptor, TextContent, ImageContent,
-} from 'pdf-serializer';
-
+import { ttf } from './text';
 import Image from './image';
+
+import {
+  xref,
+  Catalog, Pages, Page, Stream, Resources, ProcSet, Trailer,
+  TextContent, ImageContent,
+} from 'pdf-serializer';
 
 
 const pdfDocument = {
   objectIdCounter: 0,
-  fontObjectNameCounter: 0,
-  fontId: 200,
+  fontNameCounter: 0,
+  fontSubsetTagCounter: 199,
 
-  nextObjectId() {
-    return ++this.objectIdCounter;
-  },
-
-  nextFontObjectName() {
-    return `/F${++this.fontObjectNameCounter}`;
-  },
-
-  nextFontId() {
-    return `/DOC${this.fontId++}`.replace(/(\d)/g, num => String.fromCharCode(+num + 65));
-  },
+  nextObjectId() { return ++this.objectIdCounter; },
+  nextFontName() { return ttf.getFontName(++this.fontNameCounter); },
+  nextFontSubsetTag() { return ttf.getFontSubsetTag(++this.fontSubsetTagCounter); },
 
   props: {
     catalog: 'catalog',
@@ -88,131 +77,83 @@ const pdfDocument = {
 
   addContent(content) {
     const stream = this.currentStream || this.addStream();
-    // const stream = this.addStream();
     stream.addContent(content);
   },
 
   addImages(images) {
-    forEach(images, (file, name) => {
+    forEach(images, (file, handle) => {
       const objects = Image({ file });
       this.addObjects(objects);
-      this.images[name] = objects.shift();
+      this.images[handle] = objects.shift();
     });
   },
 
-  placeImage({ name, width, height, x, y }) {
-    this.addContent(ImageContent({ name: `/${name}`, width, height, x, y }));
+  setImage(handle, { width, height, x, y }) {
+    this.addContent(ImageContent({ name: `/${handle}`, width, height, x, y }));
     if (!this.currentPage.Resources.XObject) {
       this.currentPage.Resources.XObject = {};
     }
-    this.currentPage.Resources.XObject[name] = this.images[name];
+    this.currentPage.Resources.XObject[handle] = this.images[handle];
   },
 
-  addTTFFont({ name, file }) {
-    const ttfFont = new TTFFont(file);
-    const fontId = this.nextFontId();
-    const fontObjectName = this.nextFontObjectName();
-    const embeddedFontFile = FontFile();
+  addTTFFont(handle, file) {
+    const font = ttf.parseFont(file);
+    const fontSubsetTag = this.nextFontSubsetTag();
+    const fontName = this.nextFontName();
 
-    const fontDesc = FontDescriptor({
-      FontName: fontId,
-      FontFile2: embeddedFontFile,
-      FontBBox: `[${ttfFont.bbox.join(' ')}]`,
-      Flags: ttfFont.flags,
-      StemV: ttfFont.stemV,
-      ItalicAngle: ttfFont.italicAngle,
-      Ascent: ttfFont.ascent,
-      Descent: ttfFont.descent,
-      CapHeight: ttfFont.capHeight,
-      XHeight: get(ttfFont, 'tables.os2.xHeight') || 0,
-    });
+    const fontFile = ttf.getFontFile();
+    const pdfFontDescriptor = ttf.getFontDescriptor({ font, fontSubsetTag, fontFile });
+    const fontObj = ttf.getFont({ descriptor: pdfFontDescriptor, fontName });
 
-    const fontObj = Font({
-      BaseFont: fontId,
-      FontDescriptor: fontDesc,
-      Subtype: '/TrueType',
-      Name: fontObjectName,
-      Encoding: '/MacRomanEncoding',
-    });
+    this.addObjects([fontFile, pdfFontDescriptor, fontObj]);
 
-    this.addObjects([embeddedFontFile, fontDesc, fontObj]);
     this.fonts.push({
-      name,
-      font: ttfFont,
-      subset: ttfFont.subset(),
-      descriptor: fontDesc,
-      fontObject: fontObj,
-      embedded: embeddedFontFile,
+      handle,
+      fontFile,
+      subset: font.subset(),
+      pdfFont: fontObj,
     });
   },
 
-  fontSubsetToBuffer(ab) {
-    const buffer = new Buffer(ab.byteLength);
-    const view = new Uint8Array(ab);
-    for (let i = 0; i < buffer.length; ++i) {
-      buffer[i] = view[i];
-    }
-    return buffer;
-  },
-
-  addText({ font, x, y, size, text }) {
-    const docFont = find(this.fonts, { name: font });
+  setText(text, { font, x, y, size }) {
+    const docFont = find(this.fonts, { handle: font });
     docFont.subset.use(text);
 
-    // deflate
-    // const textObjString = Text({
-    //   text: docFont.subset.encode(text).replace(/([\\()])/g, '\\$1'),
-    //   font: docFont.fontObject.Name,
-    //   x, y, size,
-    // }).toString();
-    // const stream = Stream({ Filter: '/FlateDecode', data: new Buffer(zlib.deflateSync(textObjString), 'binary') });
-
-    // no deflate
     const stream = Stream();
     stream.addContent(
       TextContent({
         text: docFont.subset.encode(text).replace(/([\\()])/g, '\\$1'),
-        font: docFont.fontObject.Name,
+        font: docFont.pdfFont.Name,
         x, y, size,
       })
     );
 
     this.addStream({ stream });
-    this.currentPage.addFont(docFont.fontObject);
+    this.currentPage.addFont(docFont.pdfFont);
   },
 
-  embedTTFFonts() {
-    forEach(this.fonts, font => {
-      font.subset.embed();
-      font.embedded.data = this.fontSubsetToBuffer(font.subset.save());
-      const subsetCodes = Object.keys(font.subset.subset);
-      const metrics = font.subset.font.tables.hmtx.metrics;
-      const codeMap = font.subset.font.codeMap;
-      const unitsPerEm = font.font.tables.head.unitsPerEm;
-      font.fontObject.FirstChar = +subsetCodes[0];
-      font.fontObject.LastChar = +subsetCodes[subsetCodes.length - 1];
-      const widths = values(font.subset.subset).map(code => {
-        const mappedCode = codeMap[`${code}`];
-        if (!(mappedCode && metrics[mappedCode])) return Math.round(1000 * 1000 / unitsPerEm);
-        return Math.round(metrics[mappedCode] * 1000 / unitsPerEm); // 2048);
-      });
-      font.fontObject.Widths = `[${widths.join(' ')}]`;
-    });
+  embedTTFFont(font) {
+    font.subset.embed();
+    font.fontFile.data = ttf.subsetToBuffer(font.subset.save());
+    const meta = ttf.getFontCharMeta(font.subset);
+    font.pdfFont.FirstChar = meta.firstChar;
+    font.pdfFont.LastChar = meta.lastChar;
+    font.pdfFont.Widths = `[${meta.widths.join(' ')}]`;
   },
 
   done() {
-    this.embedTTFFonts();
+    forEach(this.fonts, font => this.embedTTFFont(font));
 
     this.fileOffset = 0;
     this.fileBuffer = [];
     const offsets = [];
-    this.addToFileBuffer(`%PDF-1.4\n%\xFF\xFF\xFF\xFF`);
+    this.addToFileBuffer(`%PDF-1.4\n%\xFF\xFF\xFF\xFF Docca.io`);
 
     forEach(this.objects, (obj, idx) => {
       const content = obj.toObject();
       offsets[this.objects[idx].id] = this.addToFileBuffer(content);
     });
-    const trailer = Trailer({Size: offsets.length + 1, Root: this.catalog });
+    const trailer = Trailer({ Size: offsets.length + 1, Root: this.catalog });
     const startx = this.addToFileBuffer(xref({ offsets, trailer }));
     this.addToFileBuffer(`startxref\n${startx}\n%%EOF`);
 
@@ -246,9 +187,7 @@ const Document = (props) => {
   doc.fonts = [];
   doc.images = {};
   const pages = Pages();
-  const catalog = Catalog({
-    Pages: pages,
-  });
+  const catalog = Catalog({ Pages: pages });
   const procSet = ProcSet({ data: ['/PDF', '/Text', '/ImageB', '/ImageC', '/ImageI'] });
   doc.addObjects({ catalog, pages, procSet });
   return doc;
