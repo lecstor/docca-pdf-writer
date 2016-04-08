@@ -1,6 +1,7 @@
 import merge from 'lodash/merge';
 import forEach from 'lodash/forEach';
 import map from 'lodash/map';
+import values from 'lodash/values';
 import isArray from 'lodash/isArray';
 import isString from 'lodash/isString';
 import find from 'lodash/find';
@@ -266,15 +267,14 @@ const pdfDocument = {
    * });
    */
   setText({ lines, x, y, color = [0, 0, 0] }) {
-    const stream = Stream();
-    this.addStream({ stream });
+    const fonts = {};
     const text = map(lines, line => {
       const encoded = {
         leading: line.leading,
         parts: map(line.parts, part => {
-          const docFont = find(this.fonts, { handle: part.font });
+          const docFont = fonts[part.font] || find(this.fonts, { handle: part.font });
           docFont.subset.use(part.text);
-          this.currentPage.addFont(docFont.pdfFont);
+          fonts[part.font] = docFont;
           return {
             ...part,
             color: this.getColor(part.color),
@@ -290,7 +290,8 @@ const pdfDocument = {
       );
       return encoded;
     });
-    stream.addContent(TextContent({ x, y, color: this.getColor(color), lines: text }));
+    this.addContent(TextContent({ x, y, color: this.getColor(color), lines: text }));
+    values(fonts, font => this.currentPage.addFont(font));
   },
 
   embedTTFFont(font) {
