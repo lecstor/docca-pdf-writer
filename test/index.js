@@ -1,7 +1,8 @@
 import fs from 'fs';
 import tape from 'tape';
 
-import Document from '../src';
+import Document, { delineateText } from '../src';
+
 
 tape('doc-image-text', t => {
   const file = fs.createWriteStream('test/output/doc-image-text.pdf');
@@ -9,20 +10,32 @@ tape('doc-image-text', t => {
   const doc = Document({ file });
 
   const fontFile = fs.readFileSync('./test/fixtures/fonts/NotoSans-Regular.ttf');
-  doc.addTTFFont('regular', fontFile);
-
-  doc.setText(
-    'NotoSans: Hello World or Καλημέρα κόσμε or こんにちは 世界',
-    { font: 'regular', x: 20, y: 720, size: 15 }
-  );
+  doc.addTTFFont('noto', fontFile);
 
   const fontFile2 = fs.readFileSync('./test/fixtures/fonts/NotoSans-Bold.ttf');
-  doc.addTTFFont('bold', fontFile2);
+  doc.addTTFFont('noto-bold', fontFile2);
 
-  doc.setText(
-    'NotoSans-Bold: Hello World or Καλημέρα κόσμε or こんにちは 世界',
-    { font: 'bold', x: 20, y: 450, size: 15 }
-  );
+  const lines = delineateText([
+    { font: 'noto', size: 12, text: 'Hello World\n\nor ' },
+    { font: 'noto-bold', size: 15, text: 'Καλημέρα κόσμε\n', color: '#008000' },
+    { font: 'noto', size: 12, text: 'or こんにちは 世界' },
+  ]);
+
+  // const meta = doc.getTextMeta(lines, { leading: 18 });
+  const meta = doc.getTextMeta(lines);
+  console.log(JSON.stringify({ meta }, null, 2));
+
+
+  doc.setText({ lines, x: 20, y: 720 });
+
+  doc.setText({
+    x: 20, y: 520,
+    lines: delineateText([
+      { font: 'noto', size: 12, text: 'Hello World\nor ', color: [0.5, 0.1, 0.1] },
+      { font: 'noto-bold', size: 15, text: 'Καλημέρα κόσμε', color: 'rgb(50, 44, 199)' },
+      { font: 'noto', size: 12, text: 'or こんにちは 世界' },
+    ]),
+  });
 
   doc.addImages({
     jpeg: 'test/fixtures/images/basic.jpg',
@@ -31,8 +44,6 @@ tape('doc-image-text', t => {
 
   doc.setImage('jpeg', { width: 100, height: 80, x: 50, y: 750 });
   doc.setImage('png1', { width: 100, height: 80, x: 250, y: 750 });
-
-  doc.setText('Hello Again', { font: 'regular', x: 20, y: 550, size: 20 });
 
   doc.addImages({
     png2: 'test/fixtures/images/pil123rgba.png',
