@@ -291,6 +291,7 @@ const pdfDocument = {
     const fonts = {};
     const text = map(lines, line => {
       const encoded = {
+        color,
         leading: line.leading,
         parts: map(line.parts, part => {
           const docFont = fonts[part.font] || find(this.fonts, { handle: part.font });
@@ -318,7 +319,14 @@ const pdfDocument = {
   },
 
   setGraphics({ paths }) {
-    this.addContent(GraphicsContent({ paths }));
+    const encodedPaths = map(paths, path => {
+      return {
+        color: this.getColor(path.color),
+        fillColor: this.getColor(path.fillColor),
+        parts: path.parts,
+      };
+    });
+    this.addContent(GraphicsContent({ paths: encodedPaths }));
   },
 
   embedTTFFont(font) {

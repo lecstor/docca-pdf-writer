@@ -46,21 +46,41 @@ tape('doc-image-text', t => {
 
   meta = doc.getTextMeta(wrapped);
 
-  doc.setText({ lines: wrapped, x: 20, y: 720 });
+  const x = 20;
+  const y = 720 - meta.height + meta.lines[0].size + 1;
+  const width = meta.width;
+  const height = meta.height + meta.lines[meta.lines.length - 1].descent;
 
   // add a border
   const pad = 5;
+
   doc.setGraphics({
-    paths: [{
-      parts: [{
-        op: 're',
-        x: 20 - pad,
-        y: 720 - meta.height + meta.lines[0].size - pad + 1,
-        width: pad * 2 + meta.width, // 250,
-        height: meta.height + meta.lines[meta.lines.length - 1].descent + pad * 2,
-      }],
-    }],
+    paths: [
+      {
+        color: 'blue',
+        fillColor: 'lightgreen',
+        parts: [{
+          op: 're',
+          x: x - pad,
+          y: y - pad,
+          width: width + (pad * 2),
+          height: height + (pad * 2),
+        }],
+      },
+      {
+        color: 'red',
+        parts: [{
+          op: 're',
+          x: x - (pad + 2),
+          y: y - (pad + 2),
+          width: width + ((pad + 2) * 2),
+          height: height + ((pad + 2) * 2),
+        }],
+      },
+    ],
   });
+
+  doc.setText({ lines: wrapped, x: 20, y: 720 });
 
 
   // doc.setText({
