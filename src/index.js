@@ -1,7 +1,6 @@
 import merge from 'lodash/merge';
 import forEach from 'lodash/forEach';
 import map from 'lodash/map';
-import values from 'lodash/values';
 import isArray from 'lodash/isArray';
 import isString from 'lodash/isString';
 import find from 'lodash/find';
@@ -12,11 +11,12 @@ import Promise from 'bluebird';
 import { ttf } from './text';
 import Image from './image';
 import delineateText from './text/util/delineate-text';
+import wrapText from './text/util/wrap-text';
 
 import {
   xref,
   Catalog, Pages, Page, Stream, Resources, ProcSet, Trailer,
-  TextContent, ImageContent,
+  TextContent, ImageContent, GraphicsContent,
 } from 'pdf-serializer';
 
 
@@ -138,6 +138,7 @@ const pdfDocument = {
    */
   addTTFFont(handle, file) {
     const font = ttf.parseFont(file);
+    // console.log(JSON.stringify(font, null, 2));
     const fontSubsetTag = this.nextFontSubsetTag();
     const fontName = this.nextFontName();
 
@@ -159,7 +160,7 @@ const pdfDocument = {
   /**
    * get the width and height of a single line of text
    * @param   {Array} line                 text content, font, and size
-   * @param   {Number} options.lineHeight  minimum line height for lines of text
+   * @param   {Number} options.leading     minimum leading for lines of text
    * @returns {Object} meta                width and height of the text line
    * @returns {Number} meta.width
    * @returns {Number} meta.height
@@ -169,21 +170,32 @@ const pdfDocument = {
    *     { font: 'noto', size: 12, text: 'or ' },
    *     { font: 'noto-bold', size: 15, text: 'Καλημέρα κόσμε' }
    *   ],
-   *   { lineHeight: 18 }
+   *   { leading: 18 }
    * );
    *
    * returns: { width: 141.80126953125, height: 20.43 }
    */
   getTextLineMeta(line, { leading = 0 } = {}) {
-    return line.reduce((meta, part) => {
+    return line.reduce((meta, part, partIdx) => {
       const docFont = find(this.fonts, { handle: part.font });
       const partLeading = docFont.font.lineHeight(part.size);
+      // const partWidth = docFont.font.stringWidth(
+      //   part.text.replace(/^\s+/, '').replace(/\s+$/, ''), part.size
+      // );
       const partWidth = docFont.font.stringWidth(part.text, part.size);
+      const partDescent = docFont.font.lineDescent(part.size);
+      let text = part.text.replace(/\s+$/, '');
+      if (partIdx) text = text.replace(/^\s+/, '');
+      const words = text.split(/\s/);
+      const wordWidths = map([' ', ...words], word => docFont.font.stringWidth(word, part.size));
       return {
         width: meta.width + partWidth,
         height: partLeading > meta.height ? partLeading : meta.height,
+        descent: partDescent < meta.descent ? partDescent : meta.descent,
+        size: part.size > meta.size ? part.size : meta.size,
+        parts: [...meta.parts, { width: partWidth, wordWidths }],
       };
-    }, { width: 0, height: leading });
+    }, { size: 0, width: 0, descent: 0, height: leading, parts: [] });
   },
 
   /**
@@ -227,7 +239,16 @@ const pdfDocument = {
       return {
         width: lineMeta.width > meta.width ? lineMeta.width : meta.width,
         height: lineMeta.height + meta.height,
-        lines: [...meta.lines, { width: lineMeta.width, height: lineMeta.height }],
+        lines: [
+          ...meta.lines,
+          {
+            width: lineMeta.width,
+            height: lineMeta.height,
+            size: lineMeta.size,
+            descent: lineMeta.descent,
+            parts: lineMeta.parts,
+          },
+        ],
       };
     }, { width: 0, height: 0, lines: [] });
   },
@@ -280,7 +301,7 @@ const pdfDocument = {
             color: this.getColor(part.color),
             leading: docFont.font.lineHeight(part.size),
             font: docFont.pdfFont.Name,
-            text: docFont.subset.encode(part.text),
+            text: docFont.subset.encode(part.text).replace(/([\\()])/g, '\\$1'),
           };
         }),
       };
@@ -291,7 +312,13 @@ const pdfDocument = {
       return encoded;
     });
     this.addContent(TextContent({ x, y, color: this.getColor(color), lines: text }));
-    values(fonts, font => this.currentPage.addFont(font));
+    forEach(fonts, font => {
+      this.currentPage.addFont(font.pdfFont);
+    });
+  },
+
+  setGraphics({ paths }) {
+    this.addContent(GraphicsContent({ paths }));
   },
 
   embedTTFFont(font) {
@@ -357,4 +384,4 @@ const Document = (props) => {
 
 export default Document;
 
-export { delineateText };
+export { delineateText, wrapText };

@@ -21,6 +21,7 @@ import map from 'lodash/map';
  *        { "font": "noto-bold", "size": 15, "text": "Καλημέρα κόσμε" },
  *      ],
  *    },
+ *    { parts: [{ "font": "noto", "size": 12, "text": "or こんにちは 世界" }] },
  *  ],
  */
 export default function delineateText(content) {
