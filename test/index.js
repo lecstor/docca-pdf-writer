@@ -51,8 +51,19 @@ tape('doc-image-text', t => {
   const width = meta.width;
   const height = meta.height + meta.lines[meta.lines.length - 1].descent;
 
+  doc.setGraphics({
+    paths: [
+      {
+        color: 'red',
+        parts: [
+          { op: 'circle', x, y, radius: 10 },
+        ],
+      },
+    ],
+  });
+
   // add a border
-  const pad = 5;
+  const pad = 10;
 
   doc.setGraphics({
     paths: [
@@ -65,6 +76,7 @@ tape('doc-image-text', t => {
           y: y - pad,
           width: width + (pad * 2),
           height: height + (pad * 2),
+          borderRadius: 20,
         }],
       },
       {
