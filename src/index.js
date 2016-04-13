@@ -16,7 +16,7 @@ import wrapText from './text/util/wrap-text';
 import {
   xref,
   Catalog, Pages, Page, Stream, Resources, ProcSet, Trailer,
-  TextContent, ImageContent, GraphicsContent,
+  TextContent, ImageContent, GraphicsContent, RawContent,
 } from 'pdf-serializer';
 
 
@@ -321,12 +321,16 @@ const pdfDocument = {
   setGraphics({ paths }) {
     const encodedPaths = map(paths, path => {
       return {
+        ...path,
         color: this.getColor(path.color),
         fillColor: this.getColor(path.fillColor),
-        parts: path.parts,
       };
     });
     this.addContent(GraphicsContent({ paths: encodedPaths }));
+  },
+
+  setRaw({ content }) {
+    this.addContent(RawContent({ content }));
   },
 
   embedTTFFont(font) {

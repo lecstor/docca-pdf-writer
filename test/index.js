@@ -41,7 +41,7 @@ tape('doc-image-text', t => {
   let meta = doc.getTextMeta(lines);
   // console.log(JSON.stringify({ meta }, null, 2));
 
-  const wrapped = wrapText({ width: 400, lines, meta });
+  const wrapped = wrapText({ width: 300, lines, meta });
   console.log(JSON.stringify({ wrapped }, null, 2));
 
   meta = doc.getTextMeta(wrapped);
@@ -60,7 +60,7 @@ tape('doc-image-text', t => {
         color: 'blue',
         fillColor: 'lightgreen',
         parts: [{
-          op: 're',
+          op: 'rectangle',
           x: x - pad,
           y: y - pad,
           width: width + (pad * 2),
@@ -70,18 +70,82 @@ tape('doc-image-text', t => {
       {
         color: 'red',
         parts: [{
-          op: 're',
+          op: 'rectangle',
           x: x - (pad + 2),
           y: y - (pad + 2),
           width: width + ((pad + 2) * 2),
           height: height + ((pad + 2) * 2),
         }],
       },
+      {
+        color: 'green',
+        close: true,
+        parts: [
+          {
+            op: 'line',
+            x: x - (pad + 5),
+            y: y - (pad + 5),
+            x2: x + width + ((pad + 5) * 2),
+            y2: y + height + ((pad + 5) * 2),
+          },
+          {
+            op: 'line',
+            x2: x + width + ((pad + 5) * 2),
+            y2: y + ((pad + 5) * 2),
+          },
+        ],
+      },
+      {
+        color: 'green',
+        close: false,
+        parts: [
+          {
+            op: 'line',
+            x: x + 10 - (pad + 5),
+            y: y + 10 - (pad + 5),
+            x2: x + 10 + width + ((pad + 5) * 2),
+            y2: y + 10 + height + ((pad + 5) * 2),
+          },
+          {
+            op: 'line',
+            x2: x + 10 + width + ((pad + 5) * 2),
+            y2: y + 10 + ((pad + 5) * 2),
+          },
+        ],
+      },
     ],
   });
 
   doc.setText({ lines: wrapped, x: 20, y: 720 });
 
+  doc.setRaw({
+    content: `q 0 1 0 RG 1 1 0 rg
+      50 400 100 100 re
+      150 300 m
+      245 295 250 200 v
+      245 105 150 100 v
+      55 105 50 200 v
+      55 295 150 300 v
+      B Q`,
+  });
+
+  doc.setGraphics({
+    paths: [
+      {
+        color: 'red',
+        parts: [
+          { op: 'circle', x: 350, y: 350, radius: 100 },
+        ],
+      },
+      {
+        color: 'purple',
+        parts: [
+          { op: 'line', x: 345, y: 350, x2: 355, y2: 350 },
+          { op: 'line', x: 350, y: 345, x2: 350, y2: 355 },
+        ],
+      },
+    ],
+  });
 
   // doc.setText({
   //   x: 20, y: 520,
@@ -105,7 +169,7 @@ tape('doc-image-text', t => {
     png3: 'test/fixtures/images/basic.png',
   });
 
-  doc.setImage('png2', { width: 100, height: 80, x: 50, y: 500 });
+  doc.setImage('png2', { width: 100, height: 80, x: 50, y: 530 });
   doc.setImage('png3', { width: 100, height: 80, x: 250, y: 500 });
 
   return doc.done()
