@@ -1,6 +1,7 @@
 import merge from 'lodash/merge';
 import forEach from 'lodash/forEach';
 import map from 'lodash/map';
+import reduce from 'lodash/reduce';
 import isArray from 'lodash/isArray';
 import isString from 'lodash/isString';
 import find from 'lodash/find';
@@ -77,6 +78,7 @@ const pdfDocument = {
     this.addObjects({ page });
     this.pages.addPage(page);
     this.currentPage = page;
+    this.addStream();
     return page;
   },
 
@@ -176,17 +178,13 @@ const pdfDocument = {
    * returns: { width: 141.80126953125, height: 20.43 }
    */
   getTextLineMeta(line, { leading = 0 } = {}) {
-    return line.reduce((meta, part, partIdx) => {
+    return line.reduce((meta, part) => {
       const docFont = find(this.fonts, { handle: part.font });
       const partLeading = docFont.font.lineHeight(part.size);
-      // const partWidth = docFont.font.stringWidth(
-      //   part.text.replace(/^\s+/, '').replace(/\s+$/, ''), part.size
-      // );
       const partWidth = docFont.font.stringWidth(part.text, part.size);
       const partDescent = docFont.font.lineDescent(part.size);
-      let text = part.text.replace(/\s+$/, '');
-      if (partIdx) text = text.replace(/^\s+/, '');
-      const words = text.split(/\s/);
+
+      const words = part.text.split(/\s/);
       const wordWidths = map([' ', ...words], word => docFont.font.stringWidth(word, part.size));
       return {
         width: meta.width + partWidth,
@@ -287,13 +285,21 @@ const pdfDocument = {
    *   ],
    * });
    */
-  setText({ lines, x, y, color = [0, 0, 0] }) {
+  setText({ lines, x, y, color = [0, 0, 0], meta }) {
+    let textMeta = meta;
     const fonts = {};
-    const text = map(lines, line => {
+    const text = map(lines, (line, lineIdx) => {
       const encoded = {
         color,
         leading: line.leading,
-        parts: map(line.parts, part => {
+        parts: map(line.parts, (part, partIdx) => {
+          if (part.href) {
+            if (!textMeta) textMeta = this.getTextMeta(lines);
+            this.setTextHref({
+              textX: x, textY: y, meta: textMeta, lineIdx, partIdx,
+              href: part.href, color: part.color,
+            });
+          }
           const docFont = fonts[part.font] || find(this.fonts, { handle: part.font });
           docFont.subset.use(part.text);
           fonts[part.font] = docFont;
@@ -316,6 +322,47 @@ const pdfDocument = {
     forEach(fonts, font => {
       this.currentPage.addFont(font.pdfFont);
     });
+  },
+
+  setTextHref({ textX, textY, meta, lineIdx, partIdx, href, color }) {
+    const y = reduce(meta.lines, (total, line, idx) => {
+      if (!idx || idx > lineIdx) return total;
+      return total - line.height;
+    }, textY - 2);
+
+    let leadingSpaceWidth = 0;
+    let trailingSpaceWidth = 0;
+    // find x of the left of the link part
+    const x = reduce(meta.lines[lineIdx].parts, (total, part, idx) => {
+      // ignore parts after the link part
+      if (idx > partIdx) return total;
+
+      // first entry in wordWidths is actually the spaceWidth
+      const spaceWidth = part.wordWidths[0];
+
+      // add widths of parts before the link part
+      if (idx !== partIdx) return total + part.width;
+
+      // adjust for spaces at start of part
+      forEach(part.wordWidths, (width, wIdx) => {
+        if (!wIdx) return true; // skip first width as it's the spaceWidth
+        if (width) return false;
+        leadingSpaceWidth += spaceWidth;
+      });
+
+      // adjust for spaces at end of part
+      forEach([...part.wordWidths].reverse(), width => {
+        if (width) return false;
+        trailingSpaceWidth += spaceWidth;
+      });
+
+      return total + leadingSpaceWidth;
+    }, textX);
+
+    const x2 = x + meta.lines[lineIdx].parts[partIdx].width - leadingSpaceWidth - trailingSpaceWidth;
+    const y2 = y + meta.lines[lineIdx].size;
+    // console.log({ uri: href, color, x, y, x2, y2 });
+    this.currentPage.addUriLink({ uri: href, color, x, y, x2, y2 });
   },
 
   setGraphics({ paths }) {

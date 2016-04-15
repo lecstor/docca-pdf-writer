@@ -28,7 +28,7 @@ tape('doc-image-text', t => {
     { font: 'noto-bolditalic', size: 12, text: 'cmap ' },
     { font: 'noto',      size: 12, text: '(currently only format 4), ' },
     { font: 'noto-bold', size: 12, text: 'glyf ' },
-    { font: 'noto',      size: 12, text: '(glyphs are not actually Καλημέρα, only rewritten), ' },
+    { font: 'noto',      size: 12, text: '(glyphs are not actually Καλημέρα, only rewritten),\n' },
     { font: 'noto-bold', size: 12, text: 'head, hhea, hmtx, loca, maxp, name, os2, post ' },
     { font: 'noto',      size: 12, text: '(currently only format 3).\n\n' },
     { font: 'noto-bold', size: 12, text: 'TrueType Font Specification: ' },
@@ -36,18 +36,18 @@ tape('doc-image-text', t => {
   ];
 
   const lines = delineateText(content);
-  console.log(JSON.stringify({ 'delineated': lines }, null, 2));
+  // console.log(JSON.stringify({ 'delineated': lines }, null, 2));
 
   let meta = doc.getTextMeta(lines);
   // console.log(JSON.stringify({ meta }, null, 2));
 
   const wrapped = wrapText({ width: 300, lines, meta });
-  console.log(JSON.stringify({ wrapped }, null, 2));
+  // console.log(JSON.stringify({ wrapped }, null, 2));
 
   meta = doc.getTextMeta(wrapped);
 
   const x = 20;
-  const y = 720 - meta.height + meta.lines[0].size + 1;
+  const y = 550 - meta.height + meta.lines[0].size + 1;
   const width = meta.width;
   const height = meta.height + meta.lines[meta.lines.length - 1].descent;
 
@@ -67,6 +67,16 @@ tape('doc-image-text', t => {
 
   doc.setGraphics({
     paths: [
+      {
+        color: 'black',
+        parts: [{
+          op: 'rectangle',
+          x: x - pad,
+          y: y - pad,
+          width: 300,
+          height: height + (pad * 2) + 10,
+        }],
+      },
       {
         color: 'blue',
         fillColor: 'lightgreen',
@@ -128,7 +138,88 @@ tape('doc-image-text', t => {
     ],
   });
 
-  doc.setText({ lines: wrapped, x: 20, y: 720 });
+  doc.setText({ lines: wrapped, x: 20, y: 550 });
+
+
+  const linkText = delineateText([
+    { font: 'noto', size: 12, text: '   Hello1 ' },
+    { font: 'noto', size: 15, text: 'Hello2\n', href: 'http://www.google.com', color: 'blue' },
+
+    { font: 'noto', size: 12, text: '   Hello3 ' },
+    { font: 'noto', size: 15, text: ' Hello4\n', href: 'http://www.google.com', color: 'blue' },
+
+    { font: 'noto', size: 15, text: 'multi word link\n', href: 'http://www.google.com', color: 'blue' },
+
+    { font: 'noto', size: 15, text: '   paragraph multi word link\n', href: 'http://www.google.com', color: 'blue' },
+
+    { font: 'noto', size: 15, text: '   paragraph multi part ' },
+    { font: 'noto', size: 15, text: 'multi word link\n', href: 'http://www.google.com', color: 'blue' },
+
+    { font: 'noto', size: 15, text: '   paragraph ' },
+    { font: 'noto', size: 15, text: 'multi word link', href: 'http://www.google.com', color: 'blue' },
+    { font: 'noto', size: 15, text: ' text following\n' },
+
+    { font: 'noto', size: 12, text: 'one ' },
+    { font: 'noto', size: 15, text: 'Hello5', href: 'http://www.google.com', color: 'blue' },
+    { font: 'noto', size: 12, text: ' two\n' },
+
+    { font: 'noto', size: 12, text: 'one ' },
+    { font: 'noto', size: 15, text: 'Hello6 ', href: 'http://www.google.com', color: 'blue' },
+    { font: 'noto', size: 15, text: 'Hello7 ', href: 'http://www.google.com', color: 'blue' },
+    { font: 'noto', size: 15, text: ' Hello8', href: 'http://www.google.com', color: 'blue' },
+    { font: 'noto', size: 15, text: '  Hello9', href: 'http://www.google.com', color: 'blue' },
+    { font: 'noto', size: 12, text: ' two\n' },
+
+    { font: 'noto', size: 20, text: '    ' },
+    { font: 'noto', size: 20, text: 'one' },
+    { font: 'noto', size: 20, text: ' ' },
+    { font: 'noto', size: 20, text: 'two' },
+    { font: 'noto', size: 20, text: ' ' },
+    { font: 'noto', size: 20, text: 'three' },
+    { font: 'noto', size: 20, text: ' ' },
+    { font: 'noto', size: 20, text: 'Hello6', href: 'http://www.google.com', color: 'blue' },
+    { font: 'noto', size: 20, text: ' two' },
+  ]);
+  // console.log(JSON.stringify(linkText, null, 2));
+  meta = doc.getTextMeta(linkText);
+  // console.log(JSON.stringify(meta, null, 2));
+  doc.setText({ meta, x: 20, y: 820, lines: linkText });
+
+
+  const linkText2 = delineateText([
+    { font: 'noto', size: 20, text: 'one ' },
+    { font: 'noto', size: 20, text: 'Hello6', href: 'http://www.google.com', color: 'blue' },
+    { font: 'noto', size: 20, text: ' Hello7  ', href: 'http://www.google.com', color: 'blue' },
+    { font: 'noto', size: 20, text: ' Ello Hello8', href: 'http://www.google.com', color: 'blue' },
+    { font: 'noto', size: 20, text: ' two\n' },
+  ]);
+  console.log(JSON.stringify(linkText2, null, 2));
+  meta = doc.getTextMeta(linkText2);
+  console.log(JSON.stringify(meta, null, 2));
+  doc.setText({ meta, x: 20, y: 620, lines: linkText2 });
+
+
+  // doc.setGraphics({
+  //   paths: [
+  //     {
+  //       color: 'purple',
+  //       parts: [
+  //         { op: 'line', x: 20, y: 850, x2: 20, y2: 820 },
+  //         { op: 'line', x2: 50, y2: 820 },
+  //       ],
+  //     },
+  //   ],
+  // });
+
+
+  // doc.currentPage.addAnnotation('<< /Type /Annot /Subtype /Link /Rect [ 20 820 40 900 ] /A << /Type /Action /S /URI /URI (http://www.google.com) >> >>');
+  // doc.currentPage.addUriLink({ uri: 'http://www.google.com', x: 20, y: 818, x2: 50, y2: 832 });
+
+  doc.addPage();
+
+  meta = doc.getTextMeta(lines);
+  const wrapped2 = wrapText({ width: 500, lines, meta });
+  doc.setText({ lines: wrapped2, x: 20, y: 720 });
 
   doc.setRaw({
     content: `q 0 1 0 RG 1 1 0 rg
