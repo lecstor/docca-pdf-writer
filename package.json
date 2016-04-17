@@ -1,5 +1,5 @@
 {
-  "name": "pdf-document",
+  "name": "docca-pdf-writer",
   "version": "0.0.1",
   "description": "PDF Document",
   "main": "index.js",

@@ -21,7 +21,7 @@ import {
 } from 'pdf-serializer';
 
 
-const pdfDocument = {
+const pdfWriter = {
   objectIdCounter: 0,
   fontNameCounter: 0,
   fontSubsetTagCounter: 199,
@@ -425,12 +425,12 @@ const pdfDocument = {
   },
 };
 
-const Document = (props) => {
+const Writer = (props) => {
   merge(props, {
     size: [595.28, 841.89],
     mediaBox: [0, 0, 595.28, 841.89],
   });
-  const doc = Object.assign(Object.create(pdfDocument), props);
+  const doc = Object.assign(Object.create(pdfWriter), props);
   doc.objects = [];
   doc.fonts = [];
   doc.images = {};
@@ -441,6 +441,6 @@ const Document = (props) => {
   return doc;
 };
 
-export default Document;
+export default Writer;
 
 export { delineateText, wrapText };

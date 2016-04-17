@@ -2,13 +2,13 @@ import fs from 'fs';
 import tape from 'tape';
 // import md from 'markdown';
 
-import Document, { delineateText, wrapText } from '../src';
+import Writer, { delineateText, wrapText } from '../src';
 
 
 tape('doc-image-text', t => {
   const file = fs.createWriteStream('test/output/doc-image-text.pdf');
 
-  const doc = Document({ file });
+  const doc = Writer({ file });
 
   const fontFile = fs.readFileSync('./test/fixtures/fonts/NotoSans-Regular.ttf');
   doc.addTTFFont('noto', fontFile);
