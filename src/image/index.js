@@ -5,7 +5,8 @@ import fileType from 'file-type';
 import { PNG as PNGjs } from 'pngjs';
 import zlib from 'zlib';
 
-import { XObject } from 'pdf-serializer';
+// import { xobject } from './pdf-objects';
+// import { XObject } from 'pdf-serializer';
 
 import { splitAlpha as pngSplitAlpha } from './png';
 import { readMeta as jpgGetMeta } from './jpeg';
@@ -18,25 +19,25 @@ function readFile(file) {
 function getPNG(file) {
   const png = PNGjs.sync.read(readFile(file));
   const channels = pngSplitAlpha(png);
-  const image = XObject({
-    Subtype: '/Image',
-    Filter: '/FlateDecode',
-    BitsPerComponent: png.depth,
-    Width: png.width, Height: png.height,
-    ColorSpace: png.color ? '/DeviceRGB' : '/DeviceGray',
+  const image = {
+    subtype: 'Image',
+    filter: 'FlateDecode',
+    bitspercomponent: png.depth,
+    width: png.width, height: png.height,
+    colorspace: png.color ? 'DeviceRGB' : 'DeviceGray',
     data: zlib.deflateSync(channels.image),
-  });
+  };
   const objects = [image];
   if (channels.alpha) {
-    const smask = XObject({
-      Subtype: '/Image',
-      Filter: '/FlateDecode',
+    const smask = {
+      subtype: 'Image',
+      filter: 'FlateDecode',
       data: zlib.deflateSync(channels.alpha),
-      BitsPerComponent: 8,
-      Width: png.width, Height: png.height,
-      ColorSpace: '/DeviceGray',
-    });
-    image.SMask = smask;
+      bitspercomponent: 8,
+      width: png.width, height: png.height,
+      colorspace: 'DeviceGray',
+    };
+    image.smask = smask;
     objects.push(smask);
   }
   return objects;
@@ -45,14 +46,14 @@ function getPNG(file) {
 function getJPEG(file) {
   const jpeg = readFile(file);
   const meta = jpgGetMeta(jpeg);
-  const image = XObject({
-    Subtype: '/Image',
-    Filter: '/DCTDecode',
-    BitsPerComponent: meta.depth,
-    Width: meta.width, Height: meta.height,
-    ColorSpace: `/Device${{ 1: 'Gray', 3: 'RGB', 4: 'CMYK' }[meta.color]}`,
+  const image = {
+    subtype: 'Image',
+    filter: 'DCTDecode',
+    bitspercomponent: meta.depth,
+    width: meta.width, height: meta.height,
+    colorspace: `Device${{ 1: 'Gray', 3: 'RGB', 4: 'CMYK' }[meta.color]}`,
     data: jpeg,
-  });
+  };
   return [image];
 }
 

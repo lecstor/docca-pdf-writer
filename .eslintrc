@@ -5,6 +5,7 @@
     "node": true
   },
   "rules": {
-    "new-cap": 0
+    "new-cap": 0,
+    "no-undef": 2
   },
 }

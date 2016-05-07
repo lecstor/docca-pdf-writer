@@ -60,7 +60,8 @@ export default function wrapText({ width, lines, meta }) {
       const spaceWidth = wordWidths.shift();
 
       if (!partIdx) { // the first part of the line
-        indent = part.text.match(/^(\s+)/);
+        const match = part.text.match(/^(\s+)/);
+        indent = match ? match[1] : '';
         currWidth = indent.length * spaceWidth;
       }
 
