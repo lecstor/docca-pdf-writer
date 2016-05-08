@@ -31,7 +31,6 @@ export function addAnnotation(object, annot) {
 }
 
 export function addUriLink(object, { uri, x, y, x2, y2, color = [0, 0, 1] }) {
-  console.log({color});
   const decColor = color.join(' ');
   const rect = ['[', x, y, x2, y2, ']'].join(' ');
   const annot = `<<
@@ -43,7 +42,7 @@ export function addUriLink(object, { uri, x, y, x2, y2, color = [0, 0, 1] }) {
 }
 
 export function setResources(object, resources) {
-  return { ...object, resources: resources };
+  return { ...object, resources };
 }
 
 export function addFont(object, font) {
@@ -51,16 +50,18 @@ export function addFont(object, font) {
   return { ...object, resources };
 }
 
+export function addImage(object, handle, image) {
+  const resources = Resources.addImage(object.resources, handle, image);
+  return { ...object, resources };
+}
+
 export function getPdfObject(object) {
-  console.log(JSON.stringify({PAGE: object}, null, 2));
   const inflated = {
     ...object,
     resources: Resources.getPdfObject(object.resources),
     parent: pdfReference(object.parent),
   };
-  console.log({inflated});
   const pdfString = toPdf(inflated);
-  console.log(JSON.stringify({ pdfString }, null, 2));
   return `${getPdfHeadReference(object)}\n${pdfString}\nendobj\n`;
 }
 

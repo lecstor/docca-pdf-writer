@@ -3,33 +3,23 @@ import _forEach from 'lodash/forEach';
 // import * as objects from '../';
 import * as content from './';
 
-// export function create(props) {
-//   return props;
-//   // const defaults = { x: 0, y: 0, lines: [] };
-//   // return objects.init({ props, defaults });
-// }
-
 export function toString(object) {
   let markup = [
     'q\nBT',
     `${object.x} ${object.y} Td`,
   ];
-  console.log(JSON.stringify({textObject: object}, null, 2));
   let currentColor = [0, 0, 0];
   if (!object.lines[0].color) {
-    console.log('setColor object');
     ({ markup, currentColor } = content.setColor(markup, object.color, { currentColor }));
   }
   _forEach(object.lines, line => {
-  // _forEach(object.lines, (line, idx) => {
-    // if (idx) markup.push(`${line.leading} TL\nT*`); // set leading and move down by that amount
+    const lineColor = line.color || object.color;
     if (!line.parts[0].color) {
-      console.log('setColor line');
-      ({ markup, currentColor } = content.setColor(markup, (line.color || object.color), { currentColor }));
+      ({ markup, currentColor } = content.setColor(markup, lineColor, { currentColor }));
     }
     _forEach(line.parts, part => {
-      console.log('setColor part');
-      ({ markup, currentColor } = content.setColor(markup, part.color || line.color || object.color, { currentColor }));
+      const partColor = part.color || lineColor;
+      ({ markup, currentColor } = content.setColor(markup, partColor, { currentColor }));
       markup.push(`/${part.font} ${part.size} Tf`);
       markup.push(`(${part.text}) Tj`);
     });

@@ -16,6 +16,11 @@ export function addFont(object, font) {
   return { ...object, font: { ...object.font, [font.name]: fontRef } };
 }
 
+export function addImage(object, handle, image) {
+  const imageRef = pdfReference(image);
+  return { ...object, xobject: { ...object.xobject, [handle]: imageRef } };
+}
+
 export function getPdfObject(object) {
   if (!object || _isEmpty(object)) return undefined;
   const pdf = toPdf({

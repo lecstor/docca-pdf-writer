@@ -12,6 +12,11 @@ tape('index', t => {
   const writer = Writer({ file });
   const fontManager = fontTools.FontManager(writer);
 
+  const imagePromises = [
+    writer.addImage({ handle: 'jpeg', file: 'test/fixtures/images/basic.jpg' }),
+    writer.addImage({ handle: 'png', file: 'test/fixtures/images/pil123p.png' }),
+  ];
+
   textBlock({ font: 'NotoSans-Regular', size: 12, width: 300, color: 'black' })
     .add('Lorem ipsum dolor sit amet, consectetur adipiscing elit.\n', { size: 15 })
     .add('Proin facilisis luctus odio', { href: 'http://docca.io', color: 'green' })
@@ -64,8 +69,14 @@ tape('index', t => {
       fontManager.addFontsToPage(block.fonts);
       fontManager.addFontsToPdf();
 
-      writer.done();
-      t.ok(true, 'completed!');
-      t.end();
+      writer.setImage('jpeg', { width: 100, height: 80, x: 400, y: 50 });
+      writer.setImage('png', { width: 100, height: 80, x: 400, y: 150 });
+
+      Promise.all(imagePromises)
+        .then(() => {
+          writer.done();
+          t.ok(true, 'completed!');
+          t.end();
+        });
     });
 });

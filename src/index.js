@@ -7,6 +7,8 @@ import _merge from 'lodash/merge';
 import _reduce from 'lodash/reduce';
 import _values from 'lodash/values';
 
+import Image from './image';
+
 import { fontTools } from '../src/text';
 
 import * as pdfObjects from './pdf-objects';
@@ -115,6 +117,48 @@ const pdfWriter = {
   },
 
   /**
+   * add an image to the PDF
+   * @param {String} options.handle  identifier used in calls to setImage
+   * @param {[type]} options.file    image file path or data
+   */
+  addImage({ handle, file }) {
+    this.images[handle] = Image({ file })
+      .then(res => {
+        const image = res;
+        if (image.smask) {
+          const smaskObj = this.addOID(XObject.create(image.smask));
+          this.writeObject(smaskObj);
+          image.smask = smaskObj;
+        }
+        const imageObj = this.addOID(XObject.create(image));
+        // this.images[handle] = imageObj;
+        this.writeObject(imageObj);
+        return imageObj;
+      });
+    return this.images[handle];
+  },
+
+  /**
+   * set an image on the current page
+   * @param {String} handle          the name of an image previously added to the document
+   * @param {Number} options.width   the width to display the image at
+   * @param {Number} options.height  the height to display the image at
+   * @param {Number} options.x       the horizontal position of the bottom left corner of the image
+   * @param {Number} options.y       the vertical position of the bottom left corner of the image
+   */
+  setImage(handle, { width, height, x, y }) {
+    const yFlip = (this.height - y);
+
+    const ref = Content.image.toString({ name: handle, width, height, x, y: yFlip });
+    this.addContent(ref);
+
+    if (!this.page) this.addPage();
+
+    return this.images[handle]
+      .then(img => { this.page = Page.addImage(this.page, handle, img); });
+  },
+
+  /**
    * add content to the current stream
    * @param {Object} content  image, text, or graphics content
    */
@@ -148,8 +192,8 @@ const pdfWriter = {
   },
 
   setGraphics({ paths }) {
-    const encodedPaths = _map(paths, path => {
-      return {
+    const encodedPaths = _map(paths,
+      path => ({
         ...path,
         parts: _map(path.parts, part => {
           const newY = {};
@@ -157,8 +201,8 @@ const pdfWriter = {
           if (_has(part, 'y2')) newY.y2 = this.height - part.y2;
           return { ...part, ...newY };
         }),
-      };
-    });
+      })
+    );
     this.addContent(Content.graphics.toString({ paths: encodedPaths }));
   },
 
@@ -186,25 +230,28 @@ const pdfWriter = {
         if (!wIdx) return true; // skip first width as it's the spaceWidth
         if (width) return false;
         leadingSpaceWidth += spaceWidth;
+        return true;
       });
 
       // adjust for spaces at end of part
       _forEach([...part.wordWidths].reverse(), width => {
         if (width) return false;
         trailingSpaceWidth += spaceWidth;
+        return true;
       });
 
       return total + leadingSpaceWidth;
     }, textX);
 
-    const x2 = x + meta.lines[lineIdx].parts[partIdx].width - leadingSpaceWidth - trailingSpaceWidth;
+    const partWidth = meta.lines[lineIdx].parts[partIdx].width;
+    const x2 = x + partWidth - leadingSpaceWidth - trailingSpaceWidth;
     const y2 = y - meta.lines[lineIdx].size;
     this.page = Page.addUriLink(this.page, { uri: href, x, y, x2, y2, color });
   },
 
   writeToFile(data) {
     let buffer = data;
-    if (!Buffer.isBuffer(data)) buffer = new Buffer(data + '\n', 'binary');
+    if (!Buffer.isBuffer(data)) buffer = new Buffer(`${data}\n`, 'binary');
     this.fileOffset += buffer.length;
     this.file.write(buffer);
   },
@@ -217,7 +264,10 @@ const pdfWriter = {
   done() {
     _forEach([this.pages, this.page, this.stream], obj => this.writeObject(obj));
 
-    const trailer = Trailer.create({ size: _values(this.offsets).length + 1, root: pdfReference(this.catalog) });
+    const trailer = Trailer.create({
+      size: _values(this.offsets).length + 1,
+      root: pdfReference(this.catalog),
+    });
     const startx = this.fileOffset;
 
     // sort offsets by numberic object ids
@@ -249,7 +299,9 @@ const Writer = (props) => {
   doc.catalog = doc.addOID(Catalog.create({ pages: doc.pages }));
   doc.writeObject(doc.catalog);
 
-  doc.procSet = doc.addOID(ProcSet.create({ data: ['/PDF', '/Text', '/ImageB', '/ImageC', '/ImageI'] }));
+  doc.procSet = doc.addOID(ProcSet.create({
+    data: ['/PDF', '/Text', '/ImageB', '/ImageC', '/ImageI'],
+  }));
   doc.writeObject(doc.procSet);
 
   return doc;

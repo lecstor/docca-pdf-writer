@@ -63,8 +63,8 @@ export function textBlock(options) {
      * of type.
      */
     add(text, textOptions = {}) {
-      const textOpts = _merge({}, _pick(this, 'font', 'size', 'leading', 'color'), ensureLeading(textOptions));
-      console.log({textOpts});
+      const defaultTextOpts = _pick(this, 'font', 'size', 'leading', 'color');
+      const textOpts = _merge({}, defaultTextOpts, ensureLeading(textOptions));
       this.content.push({
         text,
         ...textOpts,
@@ -77,27 +77,9 @@ export function textBlock(options) {
       this.width = width;
     },
 
-    loadFonts({ fonts, subsets, fontIdGenerator }) {
-      if (subsets) return Promise.resolve({ fonts, subsets });
-
-      if (fonts) {
-        return {
-          fonts: fonts,
-          subsets: fontTools.getSubsets(fonts, fontIdGenerator),
-        };
-      }
-
-      const fontNames = _map(this.content, part => part.font);
-      return fontTools.loadFonts(...fontNames)
-        .then(lFonts => ({
-          fonts: lFonts,
-          subsets: fontTools.getSubsets(lFonts, fontIdGenerator),
-        }));
-    },
-
     encodeLines({ lines, fontManager, subsets }) {
-      return _map(lines, line => {
-        return {
+      return _map(lines,
+        line => ({
           ...line,
           leading: _maxBy(line.parts, part => part.leading).leading,
           parts: _map(line.parts, part => {
@@ -105,8 +87,8 @@ export function textBlock(options) {
             const text = subsets[part.font].encode(part.text).replace(/([\\()])/g, '\\$1');
             return { ...part, text, font: fontManager.get(part.font).id };
           }),
-        };
-      });
+        })
+      );
     },
 
     format({ fontManager, width = this.width } = {}) {

@@ -8,7 +8,7 @@
     "compile": "babel src --out-dir lib",
     "test": "babel-tape-runner test/index.js test/pdf-objects/*.js | tap-diff",
     "testRaw": "babel-tape-runner test/*.js test/**/*.js",
-    "cover": "babel-node ./node_modules/.bin/babel-istanbul cover --report html ./node_modules/.bin/tape ./test/pdf-objects/*.js",
+    "cover": "babel-node ./node_modules/.bin/babel-istanbul cover --report html ./node_modules/.bin/tape ./test/pdf-objects/*.js"
   },
   "keywords": [
     "pdf",

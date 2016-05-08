@@ -30,18 +30,21 @@ test('pdf-objects font', t => {
       basefont: 'Helvetica',
       encoding: 'MacRomanEncoding',
     };
-    const actual = font.create({ _id: 1, subtype: 'Type1', name: 'F1', basefont: 'Helvetica', encoding: 'MacRomanEncoding' });
+    const actual = font.create({
+      _id: 1, subtype: 'Type1', name: 'F1', basefont: 'Helvetica', encoding: 'MacRomanEncoding',
+    });
     assert.deepEqual(actual, expected, 'font object created');
     assert.end();
   });
 
   t.test('- getPdfObject', assert => {
-    const fontObj = font.create({ _id: 1, subtype: 'Type1', name: 'F1', basefont: 'Helvetica', encoding: 'MacRomanEncoding' });
+    const fontObj = font.create({
+      _id: 1, subtype: 'Type1', name: 'F1', basefont: 'Helvetica', encoding: 'MacRomanEncoding',
+    });
     const expected = `1 0 obj
 << /Type /Font/Subtype /Type1/Name /F1/BaseFont /Helvetica/Encoding /MacRomanEncoding >>
 endobj`;
     const actual = font.getPdfObject(fontObj);
-    console.log({actual});
     assert.deepEqual(actual, expected, 'object serialized');
     assert.end();
   });

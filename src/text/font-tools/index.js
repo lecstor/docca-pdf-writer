@@ -24,6 +24,13 @@ export function getSubsets(fonts, getIdentifier) {
   });
 }
 
+export function arrayToObject(keys, func) {
+  const obj = {};
+  _forEach(keys, key => {
+    obj[key] = func(key);
+  });
+  return obj;
+}
 
 export function FontManager(writer) {
   return {
@@ -67,9 +74,7 @@ export function FontManager(writer) {
     },
 
     getFonts(fontNames) {
-      const fonts = {};
-      _forEach(fontNames, fontName => fonts[fontName] = this.getFont(fontName));
-      return fonts;
+      return arrayToObject(fontNames, name => this.getFont(name));
     },
 
     getFontId(fontName) {
@@ -81,13 +86,10 @@ export function FontManager(writer) {
     },
 
     getSubsets(fontNames) {
-      const subsets = {};
-      _forEach(fontNames, fontName => subsets[fontName] = this.getSubset(fontName));
-      return subsets;
+      return arrayToObject(fontNames, name => this.getSubset(name));
     },
 
     addCharacters(fontName, characters) {
-      // console.log({fontName, characters, font: this.fonts});
       this.fonts[fontName].subset.use(characters);
     },
 
@@ -104,10 +106,10 @@ export function FontManager(writer) {
         const characterData = truetype.getFontCharMeta(managerFont.subset);
         writer.addFont({
           fontName,
-          font: managerFont.font,
           subsetData,
-          subsetTag: managerFont.tag,
           characterData,
+          font: managerFont.font,
+          subsetTag: managerFont.tag,
           fontId: managerFont.id,
         });
       });
