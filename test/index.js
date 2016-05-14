@@ -4,7 +4,7 @@ import tape from 'tape';
 process.env.DOCCA_FONT_DIR = '/Users/jason/Development/docca/fonts';
 
 import Writer from '../src';
-import { fontTools, textBlock, getColor } from '../src/text';
+import { fontTools, TextBlock, getColor } from '../src/text';
 
 tape('index', t => {
   const file = fs.createWriteStream('test/output/index.pdf');
@@ -17,7 +17,7 @@ tape('index', t => {
     writer.addImage({ handle: 'png', file: 'test/fixtures/images/pil123p.png' }),
   ];
 
-  textBlock({ font: 'NotoSans-Regular', size: 12, width: 300, color: 'black' })
+  TextBlock({ font: 'NotoSans-Regular', size: 12, width: 300, color: 'black' })
     .add('Lorem ipsum dolor sit amet, consectetur adipiscing elit.\n', { size: 15 })
     .add('Proin facilisis luctus odio', { href: 'http://docca.io', color: 'green' })
     .add(' ')
@@ -58,7 +58,12 @@ tape('index', t => {
         ],
       });
 
-      writer.setText({ x: 1 + padding + pagePadding, y: 1 + padding + pagePadding, lines: block.lines, meta: block.meta });
+      writer.setText({
+        x: 1 + padding + pagePadding,
+        y: 1 + padding + pagePadding,
+        lines: block.lines,
+        meta: block.meta,
+      });
 
       writer.setText({
         x: 1 + padding + pagePadding,

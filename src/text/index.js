@@ -13,7 +13,7 @@ import getMeta, { getLineMeta } from './meta';
 
 export { fontTools, delineate, wrapText, getMeta, getLineMeta };
 
-function ensureLeading(opts) {
+function ensureLeading(opts = {}) {
   if (opts.leading || !opts.size) return opts;
   return { ...opts, leading: opts.size + opts.size / 10 };
 }
@@ -41,7 +41,7 @@ export function getColor(color) {
  * @param   {Object} options.color   rcolor as css name or array of rgb values
  * @returns {[type]}                 [description]
  */
-export function textBlock(options) {
+export function TextBlock(options) {
   const opts = ensureLeading(options);
   return {
     height: undefined,
@@ -75,6 +75,17 @@ export function textBlock(options) {
 
     setWidth(width) {
       this.width = width;
+    },
+
+    loadFontData({ fontManager }) {
+      const fontNames = _map(this.content, part => part.font);
+      return fontManager.registerFonts(fontNames)
+        .then(() => {
+          const subsets = fontManager.getSubsets(fontNames);
+          const lines = delineate(this.content);
+          this.meta = getMeta(lines, subsets);
+          return this;
+        });
     },
 
     encodeLines({ lines, fontManager, subsets }) {
@@ -119,6 +130,10 @@ export function textBlock(options) {
 
           return this;
         });
+    },
+
+    toPojo() {
+      return _pick(this, 'content', 'meta', 'lines', 'bounding', 'fonts');
     },
 
   };

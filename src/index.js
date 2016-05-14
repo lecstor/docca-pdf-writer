@@ -9,14 +9,20 @@ import _values from 'lodash/values';
 
 import Image from './image';
 
-import { fontTools } from '../src/text';
+import ImageManager from './image-manager';
+
+import { fontTools, TextBlock, getColor } from './text';
 
 import * as pdfObjects from './pdf-objects';
+
+const FontManager = fontTools.FontManager;
+
+export { fontTools, FontManager, ImageManager, TextBlock, getColor };
 
 const ttf = fontTools.truetype;
 
 const {
-  Action, Annot, Catalog, ColorProfile, FontDescriptor, FontFile, Font,
+  Action, Catalog, ColorProfile, FontDescriptor, FontFile, Font,
   Metadata, OutputIntent, Page, Pages, ProcSet, Resources, Stream, Trailer, XObject,
   Content, pdfReference, xref,
 } = pdfObjects;
@@ -32,7 +38,7 @@ const pdfWriter = {
 
   /**
    * add a page to the document
-   * @param {Array} options.mediaBox  array of 4 elements describing the size of the document ([0, 0, 595.28, 841.89])
+   * @param {Array} options.mediaBox  array of 4 numbers describing the document mediabox
    */
   addPage({ mediaBox } = {}) {
     const page = this.addOID(Page.create({
@@ -131,7 +137,6 @@ const pdfWriter = {
           image.smask = smaskObj;
         }
         const imageObj = this.addOID(XObject.create(image));
-        // this.images[handle] = imageObj;
         this.writeObject(imageObj);
         return imageObj;
       });
@@ -262,20 +267,25 @@ const pdfWriter = {
   },
 
   done() {
-    _forEach([this.pages, this.page, this.stream], obj => this.writeObject(obj));
+    return Promise.all(_values(this.images))
+      .then(() => {
+        _forEach([this.pages, this.page, this.stream], obj => this.writeObject(obj));
 
-    const trailer = Trailer.create({
-      size: _values(this.offsets).length + 1,
-      root: pdfReference(this.catalog),
-    });
-    const startx = this.fileOffset;
+        const trailer = Trailer.create({
+          size: _values(this.offsets).length + 1,
+          root: pdfReference(this.catalog),
+        });
+        const startx = this.fileOffset;
 
-    // sort offsets by numberic object ids
-    const offsetSortable = _mapKeys(this.offsets, (value, key) => key.split(' ', 1)[0]);
-    const offsets = _map(_keys(offsetSortable).sort((a, b) => +a - +b), id => offsetSortable[id]);
+        // sort offsets by numberic object ids
+        const offsetSortable = _mapKeys(this.offsets, (value, key) => key.split(' ', 1)[0]);
+        const offsets = _map(
+          _keys(offsetSortable).sort((a, b) => +a - +b), id => offsetSortable[id]
+        );
 
-    this.writeToFile(xref(offsets, Trailer.getPdfObject(trailer)));
-    this.writeToFile(`startxref\n${startx}\n%%EOF`);
+        this.writeToFile(xref(offsets, Trailer.getPdfObject(trailer)));
+        this.writeToFile(`startxref\n${startx}\n%%EOF`);
+      });
   },
 };
 
