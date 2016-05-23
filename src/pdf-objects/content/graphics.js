@@ -25,6 +25,8 @@ export function toString(object) {
       markup.push('S');
     } else if (path.fillColor) {
       markup.push('f');
+    } else {
+      markup.push('S');
     }
   });
   markup.push('Q\n');

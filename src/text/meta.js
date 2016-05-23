@@ -1,4 +1,6 @@
-import map from 'lodash/map';
+import _map from 'lodash/map';
+import _sumBy from 'lodash/sumBy';
+
 
 /**
  * get the width and height of a single line of text
@@ -22,15 +24,16 @@ export function getLineMeta(line, fonts, { leading = 0 } = {}) {
   return line.reduce((meta, part) => {
     // console.log(part.font, fonts);
     const font = fonts[part.font].font;
-    const partLeading = font.lineHeight(part.size);
+    const partLineHeight = font.lineHeight(part.size);
+    console.log({ partLineHeight, size: part.size, ascent: font.ascent, descent: font.descent, gap: font.lineGap });
     const partWidth = font.stringWidth(part.text, part.size);
     const partDescent = font.lineDescent(part.size);
 
     const words = part.text.split(/\s/);
-    const wordWidths = map([' ', ...words], word => font.stringWidth(word, part.size));
+    const wordWidths = _map([' ', ...words], word => font.stringWidth(word, part.size));
     return {
       width: meta.width + partWidth,
-      height: partLeading > meta.height ? partLeading : meta.height,
+      height: partLineHeight > meta.height ? partLineHeight : meta.height,
       descent: partDescent < meta.descent ? partDescent : meta.descent,
       size: part.size > meta.size ? part.size : meta.size,
       parts: [...meta.parts, { width: partWidth, wordWidths }],
@@ -74,13 +77,12 @@ export function getLineMeta(line, fonts, { leading = 0 } = {}) {
  * }
  */
 export default (lines, fonts, { leading } = {}) => {
-  return lines.reduce((meta, line) => {
+  const meta = lines.reduce((result, line) => {
     const lineMeta = getLineMeta(line.parts, fonts, { leading });
     return {
-      width: lineMeta.width > meta.width ? lineMeta.width : meta.width,
-      height: lineMeta.height + meta.height,
+      width: lineMeta.width > result.width ? lineMeta.width : result.width,
       lines: [
-        ...meta.lines,
+        ...result.lines,
         {
           width: lineMeta.width,
           height: lineMeta.height,
@@ -91,4 +93,22 @@ export default (lines, fonts, { leading } = {}) => {
       ],
     };
   }, { width: 0, height: 0, lines: [] });
+
+  const lineCount = meta.lines.length;
+  const firstLine = meta.lines[0];
+  const lastLine = meta.lines[lineCount - 1];
+  const lastLineLeading = lastLine.size / 10;
+  const firstLineAscent = firstLine.size + firstLine.descent;
+
+  const leadingHeight = _sumBy(meta.lines, line => line.size + (line.size / 10));
+  const boundingHeight = leadingHeight - lastLineLeading;
+  const baselineHeight = boundingHeight + (firstLineAscent / 10) + lastLine.descent;
+
+  const height = {
+    baseline: baselineHeight, // top to baseline of last line
+    bounding: boundingHeight, // top to bottom of last line
+    leading: leadingHeight,  // top to bottom inc last line lead
+  };
+
+  return { width: meta.width, height, lines: meta.lines };
 };

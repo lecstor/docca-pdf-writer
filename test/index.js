@@ -71,17 +71,59 @@ tape('index', t => {
         lines: block.lines, meta: block.meta,
       });
 
+      writer.setGraphics({
+        paths: [
+          {
+            color: getColor('purple'),
+            fillColor: getColor('lightgrey'),
+            parts: [
+              {
+                op: 'rectangle',
+                x: 50, y: 300,
+                width: block.width, height: block.bounding.height,
+              },
+            ],
+          },
+        ],
+      });
+      writer.setText({ x: 50, y: 300, lines: block.lines, meta: block.meta });
+      writer.setImage('jpeg', { width: 100, height: 80, x: 400, y: 300 });
+
       fontManager.addFontsToPage(block.fonts);
-      fontManager.addFontsToPdf();
 
       writer.setImage('jpeg', { width: 100, height: 80, x: 400, y: 50 });
       writer.setImage('png', { width: 100, height: 80, x: 400, y: 150 });
 
-      Promise.all(imagePromises)
-        .then(() => {
-          writer.done();
-          t.ok(true, 'completed!');
-          t.end();
+      TextBlock({ font: 'NotoSans-Regular', size: 12, width: 300, color: 'black' })
+        .add('porem ipsum dolor sit amet, consectetur. Lorem ipsum dolor sit amet', { size: 15 })
+        .format({ fontManager })
+        .then(block2 => {
+          writer.setGraphics({
+            paths: [
+              {
+                color: getColor('purple'),
+                fillColor: getColor('lightgrey'),
+                parts: [
+                  {
+                    op: 'rectangle',
+                    x: 50, y: 400,
+                    // width: block2.width, height: block2.bounding.height,
+                    width: block2.meta.width, height: 30, // block2.meta.height,
+                  },
+                ],
+              },
+            ],
+          });
+          writer.setText({ x: 50, y: 400, lines: block2.lines, meta: block2.meta });
+
+          fontManager.addFontsToPdf();
+
+          Promise.all(imagePromises)
+            .then(() => {
+              writer.done();
+              t.ok(true, 'completed!');
+              t.end();
+            });
         });
     });
 });

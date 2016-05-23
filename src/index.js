@@ -173,13 +173,23 @@ const pdfWriter = {
     this.page = Page.replaceLastContent(this.page, this.stream);
   },
 
+  adjustX(x) {
+    return (x - 0.5);
+  },
+
+  adjustY(y) {
+    return this.height - (y - 0.5);
+  },
+
   setText({ x, y, lines, meta }) {
-    const yFlip = (this.height - y);
+    const Y = this.adjustY(y + (meta.lines[0].size + meta.lines[0].descent));
+    const X = this.adjustX(x);
 
     this.addContent(
       Content.text.toString({
-        x, lines, meta,
-        y: yFlip - meta.lines[0].size - meta.lines[0].descent,
+        x: X, lines,
+        y: Y,
+        meta,
       })
     );
 
@@ -187,7 +197,7 @@ const pdfWriter = {
       _forEach(line.parts, (part, partIdx) => {
         if (part.href) {
           this.setTextHref({
-            textX: x, textY: yFlip,
+            textX: X, textY: Y,
             meta, lineIdx, partIdx,
             href: part.href, color: part.color,
           });
@@ -200,11 +210,16 @@ const pdfWriter = {
     const encodedPaths = _map(paths,
       path => ({
         ...path,
+        color: getColor(path.color || [0, 0, 0]),
+        fillColor: getColor(path.fillColor),
         parts: _map(path.parts, part => {
           const newY = {};
-          if (_has(part, 'y')) newY.y = this.height - part.y;
-          if (_has(part, 'y2')) newY.y2 = this.height - part.y2;
-          return { ...part, ...newY };
+          const newX = {};
+          if (_has(part, 'y')) newY.y = this.adjustY(part.y);
+          if (_has(part, 'y2')) newY.y2 = this.adjustY(part.y2);
+          if (_has(part, 'x')) newX.x = this.adjustX(part.x);
+          if (_has(part, 'x2')) newX.x2 = this.adjustX(part.x2);
+          return { ...part, ...newY, ...newX };
         }),
       })
     );
