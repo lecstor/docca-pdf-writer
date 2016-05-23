@@ -4,7 +4,7 @@ import {
   circleTopRight, circleBottomRight, circleBottomLeft, circleTopLeft,
 } from './';
 
-export default function({ x, y, width, height, cornerRadius = 0 }) {
+export default function ({ x, y, width, height, cornerRadius = 0 }) {
   const ay = y - height;
   if (!cornerRadius) return `${x} ${ay} ${width} ${height} re`;
 

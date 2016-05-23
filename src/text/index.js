@@ -29,6 +29,7 @@ export function getColor(color) {
   if (!color) return undefined;
   if (!_isString(color)) return color;
   const col = Color(color);
+  if (!col) return [0, 0, 0];
   return [col.red(), col.green(), col.blue()];
 }
 
@@ -38,7 +39,7 @@ export function getColor(color) {
  * @param   {[type]} options.size    [description]
  * @param   {[type]} options.leading [description]
  * @param   {[type]} options.wrap    [description]
- * @param   {Object} options.color   rcolor as css name or array of rgb values
+ * @param   {Object} options.color   color as css name or array of rgb values
  * @returns {[type]}                 [description]
  */
 export function TextBlock(options) {
