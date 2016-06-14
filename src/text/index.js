@@ -3,6 +3,7 @@ import _map from 'lodash/map';
 import _maxBy from 'lodash/maxBy';
 import _merge from 'lodash/merge';
 import _pick from 'lodash/pick';
+import _uniq from 'lodash/uniq';
 
 import Color from 'onecolor';
 
@@ -104,7 +105,7 @@ export function TextBlock(options) {
     },
 
     format({ fontManager, width = this.width } = {}) {
-      const fontNames = _map(this.content, part => part.font);
+      const fontNames = _uniq(_map(this.content, part => part.font));
       return fontManager.registerFonts(fontNames)
         .then(() => {
           const subsets = fontManager.getSubsets(fontNames);

@@ -1,5 +1,5 @@
 
-export default function({ x, y = 0, x2 = 0, y2 = 0 }) {
+export default function ({ x, y = 0, x2 = 0, y2 = 0 }) {
   const markup = [];
   if (x || x === 0) markup.push(`${x} ${y} m`);
   markup.push(`${x2} ${y2} l`);

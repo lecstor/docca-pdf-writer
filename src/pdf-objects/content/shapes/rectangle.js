@@ -4,11 +4,11 @@ import {
   circleTopRight, circleBottomRight, circleBottomLeft, circleTopLeft,
 } from './';
 
-export default function ({ x, y, width, height, cornerRadius = 0 }) {
+export default function ({ x, y, width, height, borderRadius = 0 }) {
   const ay = y - height;
-  if (!cornerRadius) return `${x} ${ay} ${width} ${height} re`;
+  if (!borderRadius) return `${x} ${ay} ${width} ${height} re`;
 
-  const cR = cornerRadius;
+  const cR = borderRadius;
   const d = circleCurveCPD(cR);
   const markup = [];
   const corner = { r: cR, d };

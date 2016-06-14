@@ -25,7 +25,6 @@ export function getLineMeta(line, fonts, { leading = 0 } = {}) {
     // console.log(part.font, fonts);
     const font = fonts[part.font].font;
     const partLineHeight = font.lineHeight(part.size);
-    console.log({ partLineHeight, size: part.size, ascent: font.ascent, descent: font.descent, gap: font.lineGap });
     const partWidth = font.stringWidth(part.text, part.size);
     const partDescent = font.lineDescent(part.size);
 

@@ -1,3 +1,4 @@
+import _defaults from 'lodash/defaults';
 import _forEach from 'lodash/forEach';
 import _has from 'lodash/has';
 import _keys from 'lodash/keys';
@@ -49,6 +50,7 @@ const pdfWriter = {
     this.pages = Pages.addPage(this.pages, page);
     if (this.page) this.writeObject(this.page);
     this.page = page;
+    this.addStream();
     return this.page;
   },
 
@@ -157,8 +159,6 @@ const pdfWriter = {
     const ref = Content.image.toString({ name: handle, width, height, x, y: yFlip });
     this.addContent(ref);
 
-    if (!this.page) this.addPage();
-
     return this.images[handle]
       .then(img => { this.page = Page.addImage(this.page, handle, img); });
   },
@@ -174,15 +174,16 @@ const pdfWriter = {
   },
 
   adjustX(x) {
-    return (x - 0.5);
+    return x;
   },
 
   adjustY(y) {
-    return this.height - (y - 0.5);
+    return this.height - y;
   },
 
   setText({ x, y, lines, meta }) {
-    const Y = this.adjustY(y + (meta.lines[0].size + meta.lines[0].descent));
+    const ascent = meta.lines[0].size + meta.lines[0].descent;
+    const Y = this.adjustY(y + ascent + (ascent / 12));
     const X = this.adjustX(x);
 
     this.addContent(
@@ -199,7 +200,7 @@ const pdfWriter = {
           this.setTextHref({
             textX: X, textY: Y,
             meta, lineIdx, partIdx,
-            href: part.href, color: part.color,
+            href: part.href, color: part.color, padding: part.padding,
           });
         }
       });
@@ -226,11 +227,13 @@ const pdfWriter = {
     this.addContent(Content.graphics.toString({ paths: encodedPaths }));
   },
 
-  setTextHref({ textX, textY, meta, lineIdx, partIdx, href, color }) {
+  setTextHref({ textX, textY, meta, lineIdx, partIdx, href, color, padding }) {
+    const [padTop, padRight, padBottom, padLeft] = padding;
+
     const y = _reduce(meta.lines, (total, line, idx) => {
       if (!idx || idx > lineIdx) return total;
-      return total - line.height;
-    }, textY + 3);
+      return total - (line.height + line.descent);
+    }, textY + meta.lines[lineIdx].size + meta.lines[lineIdx].descent) + padTop;
 
     let leadingSpaceWidth = 0;
     let trailingSpaceWidth = 0;
@@ -260,12 +263,12 @@ const pdfWriter = {
         return true;
       });
 
-      return total + leadingSpaceWidth;
+      return total + leadingSpaceWidth - padLeft;
     }, textX);
 
     const partWidth = meta.lines[lineIdx].parts[partIdx].width;
-    const x2 = x + partWidth - leadingSpaceWidth - trailingSpaceWidth;
-    const y2 = y - meta.lines[lineIdx].size;
+    const x2 = x + partWidth - leadingSpaceWidth - trailingSpaceWidth + padLeft + padRight;
+    const y2 = y - meta.lines[lineIdx].size - meta.lines[lineIdx].descent - padTop - padBottom;
     this.page = Page.addUriLink(this.page, { uri: href, x, y, x2, y2, color });
   },
 
@@ -284,7 +287,10 @@ const pdfWriter = {
   done() {
     return Promise.all(_values(this.images))
       .then(() => {
-        _forEach([this.pages, this.page, this.stream], obj => this.writeObject(obj));
+        _forEach(['pages', 'page', 'stream'], objName => {
+          if (!this[objName]) throw new Error(`${objName} not set`);
+          this.writeObject(this[objName]);
+        });
 
         const trailer = Trailer.create({
           size: _values(this.offsets).length + 1,
@@ -305,13 +311,13 @@ const pdfWriter = {
 };
 
 const Writer = (props) => {
-  _merge(props, {
+  const defaultProps = {
     size: [595.28, 841.89],
     mediaBox: [0, 0, 595.28, 841.89],
-  });
-  const doc = Object.assign(Object.create(pdfWriter), props);
-  doc.width = props.size[0];
-  doc.height = props.size[1];
+  };
+  const doc = Object.assign(Object.create(pdfWriter), _merge(defaultProps, props));
+  doc.width = doc.size[0];
+  doc.height = doc.size[1];
   doc.objects = {};
   doc.fonts = {};
   doc.images = {};

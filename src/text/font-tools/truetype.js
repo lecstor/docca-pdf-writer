@@ -74,7 +74,7 @@ export function getFont({ _id, descriptor, fontId, firstChar, lastChar, widths }
     encoding: 'MacRomanEncoding',
     firstchar: firstChar,
     lastchar: lastChar,
-    widths: widths,
+    widths,
   };
 }
 
@@ -89,13 +89,19 @@ export function parseFont(file) {
 
 /**
  * load a font from file
- * @param   {String} name               name of the font as in the font file name without ttf extension
- * @param   {String} [options.fontDir]  where to find the font, defualts to process.env.DOCCA_FONT_DIR
+ * @param   {String} name               name of font, ie the font file name without ttf extension
+ * @param   {String} [options.fontDir]  where to find the font, or process.env.DOCCA_FONT_DIR
  * @returns {Promise}                   resolves to a ttfjs instance
  */
 export function loadFont(name, { fontDir = process.env.DOCCA_FONT_DIR } = {}) {
-  return new Promise(resolve => {
-    fs.readFile(`${fontDir}/${name}.ttf`, (err, data) => resolve(parseFont(data)));
+  return new Promise((resolve, reject) => {
+    fs.readFile(`${fontDir}/${name}.ttf`, (err, data) => {
+      if (err) {
+        console.log(`Error reading font file: ${fontDir}/${name}.ttf`);
+        return reject(err);
+      }
+      return resolve(parseFont(data));
+    });
   });
 }
 
