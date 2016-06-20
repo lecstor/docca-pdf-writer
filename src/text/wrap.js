@@ -76,7 +76,7 @@ export default function wrapText({ width, lines, meta }) {
           // add text to line
           if (text) newLine.parts.push({ ...part, text });
           // add line to result
-          wrapped.push(newLine);
+          if (newLine.parts.length) wrapped.push(newLine);
           // start new line
           newLine = { parts: [] };
           currWidth = spaceWidth + wordWidth;

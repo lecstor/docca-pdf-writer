@@ -14,9 +14,13 @@ import getMeta, { getLineMeta } from './meta';
 
 export { fontTools, delineate, wrapText, getMeta, getLineMeta };
 
+function leadingGap(size) {
+  return size / 5;
+}
+
 function ensureLeading(opts = {}) {
   if (opts.leading || !opts.size) return opts;
-  return { ...opts, leading: opts.size + opts.size / 10 };
+  return { ...opts, leading: opts.size + leadingGap(opts.size) };
 }
 
 /**

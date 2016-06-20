@@ -22,9 +22,9 @@ import _sumBy from 'lodash/sumBy';
  */
 export function getLineMeta(line, fonts, { leading = 0 } = {}) {
   return line.reduce((meta, part) => {
-    // console.log(part.font, fonts);
     const font = fonts[part.font].font;
-    const partLineHeight = font.lineHeight(part.size);
+    // const partLineHeight = part.leading || font.lineHeight(part.size);
+    const partLineHeight = part.leading;
     const partWidth = font.stringWidth(part.text, part.size);
     const partDescent = font.lineDescent(part.size);
 
@@ -96,10 +96,12 @@ export default (lines, fonts, { leading } = {}) => {
   const lineCount = meta.lines.length;
   const firstLine = meta.lines[0];
   const lastLine = meta.lines[lineCount - 1];
-  const lastLineLeading = lastLine.size / 10;
+  // const lastLineLeading = lastLine.size / 10;
+  const lastLineLeading = lastLine.height - lastLine.size;
   const firstLineAscent = firstLine.size + firstLine.descent;
 
-  const leadingHeight = _sumBy(meta.lines, line => line.size + (line.size / 10));
+  // const leadingHeight = _sumBy(meta.lines, line => line.size + (line.size / 10));
+  const leadingHeight = _sumBy(meta.lines, line => line.height);
   const boundingHeight = leadingHeight - lastLineLeading;
   const baselineHeight = boundingHeight + (firstLineAscent / 10) + lastLine.descent;
 

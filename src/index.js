@@ -1,4 +1,3 @@
-import _defaults from 'lodash/defaults';
 import _forEach from 'lodash/forEach';
 import _has from 'lodash/has';
 import _keys from 'lodash/keys';
@@ -23,7 +22,7 @@ export { fontTools, FontManager, ImageManager, TextBlock, getColor };
 const ttf = fontTools.truetype;
 
 const {
-  Action, Catalog, ColorProfile, FontDescriptor, FontFile, Font,
+  Action, Catalog, ColorProfile, FontDescriptor, FontFile, Font, Info,
   Metadata, OutputIntent, Page, Pages, ProcSet, Resources, Stream, Trailer, XObject,
   Content, pdfReference, xref,
 } = pdfObjects;
@@ -34,7 +33,10 @@ const pdfWriter = {
   nextObjectId() { return ++this.objectIdCounter; },
 
   addOID(obj) {
-    return obj._id ? obj : { ...obj, _id: this.nextObjectId() };
+    if (obj._id) return obj;
+    const oid = this.nextObjectId();
+    // console.log('addOID', oid, obj);
+    return { ...obj, _id: oid };
   },
 
   /**
@@ -121,6 +123,7 @@ const pdfWriter = {
    */
   registerFont(fontName) {
     this.fonts[fontName] = this.nextObjectId();
+    // console.log(fontName, 'oid', this.fonts[fontName]);
     return this.fonts[fontName];
   },
 
@@ -230,10 +233,10 @@ const pdfWriter = {
   setTextHref({ textX, textY, meta, lineIdx, partIdx, href, color, padding }) {
     const [padTop, padRight, padBottom, padLeft] = padding;
 
-    const y = _reduce(meta.lines, (total, line, idx) => {
+    const y = textY + padTop + _reduce(meta.lines, (total, line, idx) => {
       if (!idx || idx > lineIdx) return total;
-      return total - (line.height + line.descent);
-    }, textY + meta.lines[lineIdx].size + meta.lines[lineIdx].descent) + padTop;
+      return total - line.height;
+    }, meta.lines[lineIdx].size + meta.lines[lineIdx].descent);
 
     let leadingSpaceWidth = 0;
     let trailingSpaceWidth = 0;
@@ -295,6 +298,7 @@ const pdfWriter = {
         const trailer = Trailer.create({
           size: _values(this.offsets).length + 1,
           root: pdfReference(this.catalog),
+          info: pdfReference(this.info),
         });
         const startx = this.fileOffset;
 
@@ -311,9 +315,15 @@ const pdfWriter = {
 };
 
 const Writer = (props) => {
+  const now = (new Date()).toISOString();
   const defaultProps = {
     size: [595.28, 841.89],
     mediaBox: [0, 0, 595.28, 841.89],
+    info: {
+      producer: 'Docca.io',
+      creationdate: now,
+      moddate: now,
+    },
   };
   const doc = Object.assign(Object.create(pdfWriter), _merge(defaultProps, props));
   doc.width = doc.size[0];
@@ -329,6 +339,9 @@ const Writer = (props) => {
 
   doc.catalog = doc.addOID(Catalog.create({ pages: doc.pages }));
   doc.writeObject(doc.catalog);
+
+  doc.info = doc.addOID(Info.create(doc.info));
+  doc.writeObject(doc.info);
 
   doc.procSet = doc.addOID(ProcSet.create({
     data: ['/PDF', '/Text', '/ImageB', '/ImageC', '/ImageI'],

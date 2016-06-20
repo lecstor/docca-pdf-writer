@@ -19,6 +19,7 @@ import * as ColorProfile from './color-profile';
 import * as FontDescriptor from './font-descriptor';
 import * as FontFile from './font-file';
 import * as Font from './font';
+import * as Info from './info';
 import * as Metadata from './metadata';
 import * as OutputIntent from './output-intent';
 import * as Page from './page';
@@ -32,7 +33,7 @@ import * as XObject from './x-object';
 import * as Content from './content';
 
 export {
-  Action, Annot, Catalog, ColorProfile, FontDescriptor, FontFile, Font, Metadata,
+  Action, Annot, Catalog, ColorProfile, FontDescriptor, FontFile, Font, Info, Metadata,
   OutputIntent, Page, Pages, ProcSet, Resources, Stream, Trailer, XObject,
   Content,
 };
@@ -69,7 +70,10 @@ export function objectToPdf(object) {
   const pdfObject = object.pdfKeys ? keyedObject(object) : object;
   const notOk = value => _isUndefined(value) || (_isObject(value) && _isEmpty(value));
   const defined = _omitBy(pdfObject, notOk);
-  const formatted = _mapValues(defined, value => /^[A-Z]/.test(value) ? `/${value}` : value);
+  const formatted = _mapValues(defined, value => {
+    if (/^[A-Z]/.test(value)) return `/${value}`;
+    return value;
+  });
   return `<< ${_map(_keys(formatted), key => `/${key} ${formatted[key]}`).join('')} >>`;
 }
 
@@ -79,7 +83,7 @@ export function objectToPdfStream(object) {
   const head = `${getPdfHeadReference(object)}\n${pdfObj}\nstream\n`;
   const foot = '\n\nendstream\nendobj\n';
   return Buffer.isBuffer(object.data)
-    ? Buffer.concat([new Buffer(head), object.data, new Buffer(foot) ])
+    ? Buffer.concat([new Buffer(head), object.data, new Buffer(foot)])
     : [head, object.data, foot].join('');
 }
 
