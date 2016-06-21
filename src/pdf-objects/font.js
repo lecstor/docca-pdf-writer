@@ -14,6 +14,7 @@ export function getPdfObject(object) {
   const pdf = objects.toPdf({
     ...object,
     fontdescriptor: objects.pdfReference(object.fontdescriptor),
+    tounicode: objects.pdfReference(object.tounicode),
   });
   return `${objects.getPdfHeadReference(object)}\n${pdf}\nendobj`;
 }

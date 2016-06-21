@@ -27,6 +27,7 @@ import * as Pages from './pages';
 import * as ProcSet from './proc-set';
 import * as Resources from './resources';
 import * as Stream from './stream';
+import * as ToUnicode from './tounicode';
 import * as Trailer from './trailer';
 import * as XObject from './x-object';
 
@@ -34,7 +35,7 @@ import * as Content from './content';
 
 export {
   Action, Annot, Catalog, ColorProfile, FontDescriptor, FontFile, Font, Info, Metadata,
-  OutputIntent, Page, Pages, ProcSet, Resources, Stream, Trailer, XObject,
+  OutputIntent, Page, Pages, ProcSet, Resources, Stream, ToUnicode, Trailer, XObject,
   Content,
 };
 

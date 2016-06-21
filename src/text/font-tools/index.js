@@ -108,6 +108,7 @@ export function FontManager(writer) {
           fontName,
           subsetData,
           characterData,
+          unicodeCmapData: managerFont.subset.subset,
           font: managerFont.font,
           subsetTag: managerFont.tag,
           fontId: managerFont.id,

@@ -64,7 +64,7 @@ export function getFontDescriptor({ font, subsetTag, fontFile }) {
  * @param   {[type]} options.fontId     [description]
  * @returns {[type]}                    Font create args
  */
-export function getFont({ _id, descriptor, fontId, firstChar, lastChar, widths }) {
+export function getFont({ _id, descriptor, fontId, firstChar, lastChar, widths, tounicode }) {
   return {
     _id,
     basefont: descriptor.fontname,
@@ -75,6 +75,7 @@ export function getFont({ _id, descriptor, fontId, firstChar, lastChar, widths }
     firstchar: firstChar,
     lastchar: lastChar,
     widths,
+    tounicode,
   };
 }
 
@@ -161,4 +162,3 @@ export function useFont(font, characters) {
   const characterData = getFontCharMeta(subset);
   return { subset, subsetData, characterData };
 }
-

@@ -23,8 +23,8 @@ const ttf = fontTools.truetype;
 
 const {
   Action, Catalog, ColorProfile, FontDescriptor, FontFile, Font, Info,
-  Metadata, OutputIntent, Page, Pages, ProcSet, Resources, Stream, Trailer, XObject,
-  Content, pdfReference, xref,
+  Metadata, OutputIntent, Page, Pages, ProcSet, Resources, Stream, ToUnicode, Trailer,
+  XObject, Content, pdfReference, xref,
 } = pdfObjects;
 
 const pdfWriter = {
@@ -85,21 +85,25 @@ const pdfWriter = {
    * @param {Number} options.font.tables.os2.xHeight
    * @returns {Object}  the PDF font object
    */
-  addFont({ font, subsetData, subsetTag, characterData, fontId, fontName }) {
+  addFont({ font, subsetData, subsetTag, characterData, unicodeCmapData, fontId, fontName }) {
     const fontFile = this.addOID(FontFile.create(ttf.getFontFileProps(subsetData)));
     const fontDescriptorProps = ttf.getFontDescriptor({ font, subsetTag, fontFile });
     const pdfFontDescriptor = this.addOID(FontDescriptor.create(fontDescriptorProps));
+    const tounicode = this.addOID(ToUnicode.create({ data: unicodeCmapData }));
 
     const fontData = ttf.getFont({
       _id: this.fonts[fontName],
       descriptor: pdfFontDescriptor,
       fontId,
+      tounicode,
       firstChar: characterData.firstChar,
       lastChar: characterData.lastChar,
       widths: `[${characterData.widths.join(' ')}]`,
     });
+
     const fontObj = this.addOID(Font.create(fontData));
     this.writeObject(fontFile);
+    this.writeObject(tounicode);
     this.writeObject(pdfFontDescriptor);
     this.writeObject(fontObj);
     return fontObj;
