@@ -33,9 +33,12 @@ export function addAnnotation(object, annot) {
 export function addUriLink(object, { uri, x, y, x2, y2, color = [0, 0, 1] }) {
   const decColor = color.join(' ');
   const rect = ['[', x, y, x2, y2, ']'].join(' ');
+  const target = /^#/.test(uri)
+    ? `/Dest /${uri.replace(/^#/, '')}`
+    : `/A << /Type /Action /S /URI /URI (${uri}) >>`;
   const annot = `<<
 /Type /Annot /Subtype /Link /Rect ${rect} /H /P /C [${decColor}]
-/A << /Type /Action /S /URI /URI (${uri}) >>
+${target}
 /BS << /Type /Border/W 1/S /U >>
 >>`;
   return addAnnotation(object, annot);

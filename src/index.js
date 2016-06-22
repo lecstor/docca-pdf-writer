@@ -180,6 +180,28 @@ const pdfWriter = {
     this.page = Page.replaceLastContent(this.page, this.stream);
   },
 
+  /**
+   * add a link destination to the document
+   * @param {String} destName       the name used to identify the destination in links
+   * @param {Number} page           the page the destination is on
+   * @param {String} options.type   the type of destination
+   * @param {Number} options.top
+   * @param {Number} options.right
+   * @param {Number} options.bottom
+   * @param {Number} options.left
+   * @param {Number} options.zoom
+   */
+  addDestination(destName, page, {
+    type, top = 0, right, bottom = this.height, left = 0, zoom = 0,
+  }) {
+    const topFlip = (this.height - top);
+    const bottomFlip = (this.height - bottom);
+    this.catalog = Catalog.addDestination(
+      this.catalog, destName, pdfReference(this.pages.kids[page - 1]),
+      { type, top: topFlip, right, bottom: bottomFlip, left, zoom }
+    );
+  },
+
   adjustX(x) {
     return x;
   },
@@ -294,7 +316,7 @@ const pdfWriter = {
   done() {
     return Promise.all(_values(this.images))
       .then(() => {
-        _forEach(['pages', 'page', 'stream'], objName => {
+        _forEach(['catalog', 'pages', 'page', 'stream'], objName => {
           if (!this[objName]) throw new Error(`${objName} not set`);
           this.writeObject(this[objName]);
         });
@@ -342,7 +364,7 @@ const Writer = (props) => {
   doc.pages = doc.addOID(Pages.create());
 
   doc.catalog = doc.addOID(Catalog.create({ pages: doc.pages }));
-  doc.writeObject(doc.catalog);
+  // doc.writeObject(doc.catalog);
 
   doc.info = doc.addOID(Info.create(doc.info));
   doc.writeObject(doc.info);
