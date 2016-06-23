@@ -55,6 +55,7 @@ export function TextBlock(options) {
     content: [],
     ...opts,
     color: getColor(opts.color || [0, 0, 0]),
+    highlight: 'none',
 
     /**
      * add text to the block
@@ -69,12 +70,13 @@ export function TextBlock(options) {
      * of type.
      */
     add(text, textOptions = {}) {
-      const defaultTextOpts = _pick(this, 'font', 'size', 'leading', 'color');
+      const defaultTextOpts = _pick(this, 'font', 'size', 'leading', 'color', 'highlight');
       const textOpts = _merge({}, defaultTextOpts, ensureLeading(textOptions));
       this.content.push({
         text,
         ...textOpts,
         color: getColor(textOpts.color),
+        highlight: textOpts.highlight.substring(0, 1),
       });
       return this;
     },

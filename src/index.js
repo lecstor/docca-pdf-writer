@@ -4,6 +4,7 @@ import _keys from 'lodash/keys';
 import _map from 'lodash/map';
 import _mapKeys from 'lodash/mapKeys';
 import _merge from 'lodash/merge';
+import _padStart from 'lodash/padStart';
 import _reduce from 'lodash/reduce';
 import _values from 'lodash/values';
 
@@ -229,7 +230,8 @@ const pdfWriter = {
           this.setTextHref({
             textX: X, textY: Y,
             meta, lineIdx, partIdx,
-            href: part.href, color: part.color, padding: part.padding,
+            href: part.href,
+            color: part.color, padding: part.padding, highlight: part.highlight,
           });
         }
       });
@@ -256,7 +258,7 @@ const pdfWriter = {
     this.addContent(Content.graphics.toString({ paths: encodedPaths }));
   },
 
-  setTextHref({ textX, textY, meta, lineIdx, partIdx, href, color, padding }) {
+  setTextHref({ textX, textY, meta, lineIdx, partIdx, href, color, padding, highlight }) {
     const [padTop, padRight, padBottom, padLeft] = padding;
 
     const y = textY + padTop + _reduce(meta.lines, (total, line, idx) => {
@@ -298,7 +300,7 @@ const pdfWriter = {
     const partWidth = meta.lines[lineIdx].parts[partIdx].width;
     const x2 = x + partWidth - leadingSpaceWidth - trailingSpaceWidth + padLeft + padRight;
     const y2 = y - meta.lines[lineIdx].size - meta.lines[lineIdx].descent - padTop - padBottom;
-    this.page = Page.addUriLink(this.page, { uri: href, x, y, x2, y2, color });
+    this.page = Page.addUriLink(this.page, { uri: href, x, y, x2, y2, color, highlight });
   },
 
   writeToFile(data) {
@@ -340,15 +342,24 @@ const pdfWriter = {
   },
 };
 
+function getDate() {
+  const now = new Date();
+  const parts = _map(['Date', 'Hours', 'Minutes', 'Seconds'], part =>
+    _padStart(now[`getUTC${part}`](), 2, '0')
+  );
+  parts.unshift(_padStart(now.getUTCMonth() + 1, 2, '0'));
+  parts.unshift(now.getUTCFullYear());
+  return `${parts.join('')}Z`;
+}
+
 const Writer = (props) => {
-  const now = (new Date()).toISOString();
   const defaultProps = {
-    size: [595.28, 841.89],
-    mediaBox: [0, 0, 595.28, 841.89],
+    size: [595, 841],
+    mediaBox: [0, 0, 595, 841],
     info: {
       producer: 'Docca.io',
-      creationdate: now,
-      moddate: now,
+      creationdate: getDate(),
+      // moddate: date,
     },
   };
   const doc = Object.assign(Object.create(pdfWriter), _merge(defaultProps, props));

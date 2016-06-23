@@ -30,16 +30,24 @@ export function addAnnotation(object, annot) {
   return { ...object, annots: [...object.annots, annot] };
 }
 
-export function addUriLink(object, { uri, x, y, x2, y2, color = [0, 0, 1] }) {
+// OSX Preview respects BS, but draws a full border rather than underline.
+// TODO: turn off link border completely and use graphics to underline text
+export function addUriLink(
+  object, { uri, x, y, x2, y2, color = [0, 0, 1], highlight = 'i', borderWidth = 1 }
+) {
+  const hlight = { n: '/N', i: '/I', o: '/O', p: '/P' }[highlight];
   const decColor = color.join(' ');
   const rect = ['[', x, y, x2, y2, ']'].join(' ');
   const target = /^#/.test(uri)
     ? `/Dest /${uri.replace(/^#/, '')}`
     : `/A << /Type /Action /S /URI /URI (${uri}) >>`;
   const annot = `<<
-/Type /Annot /Subtype /Link /Rect ${rect} /H /P /C [${decColor}]
+/Type /Annot /Subtype /Link /Rect ${rect}
+/H ${hlight}
+/C [${decColor}]
 ${target}
-/BS << /Type /Border/W 1/S /U >>
+/BS << /Type /Border/W ${borderWidth}/S /U >>
+/Border [0 0 ${borderWidth}]
 >>`;
   return addAnnotation(object, annot);
 }
