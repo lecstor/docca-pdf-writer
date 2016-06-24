@@ -354,8 +354,8 @@ function getDate() {
 
 const Writer = (props) => {
   const defaultProps = {
-    size: [595, 841],
-    mediaBox: [0, 0, 595, 841],
+    size: [595, 841.85],
+    mediaBox: [0, 0, 595, 841.85],
     info: {
       producer: 'Docca.io',
       creationdate: getDate(),
@@ -373,9 +373,7 @@ const Writer = (props) => {
   doc.writeToFile(`%PDF-1.4\n%\xFF\xFF\xFF\xFF Docca.io\n`);
 
   doc.pages = doc.addOID(Pages.create());
-
   doc.catalog = doc.addOID(Catalog.create({ pages: doc.pages }));
-  // doc.writeObject(doc.catalog);
 
   doc.info = doc.addOID(Info.create(doc.info));
   doc.writeObject(doc.info);
