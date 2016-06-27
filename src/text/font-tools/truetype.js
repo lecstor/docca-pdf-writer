@@ -6,6 +6,8 @@ import values from 'lodash/values';
 
 import TTFFont from 'ttfjs';
 
+const FONT_CACHE = {};
+
 /**
  * get a PDF FontDescriptor FontName Tag
  * @param   {Integer} counter  a number to create a tag from
@@ -95,13 +97,17 @@ export function parseFont(file) {
  * @returns {Promise}                   resolves to a ttfjs instance
  */
 export function loadFont(name, { fontDir = process.env.DOCCA_FONT_DIR } = {}) {
+  const fontFilePath = `${fontDir}/${name}.ttf`;
+  if (FONT_CACHE[fontFilePath]) return Promise.resolve(FONT_CACHE[fontFilePath]);
+
   return new Promise((resolve, reject) => {
-    fs.readFile(`${fontDir}/${name}.ttf`, (err, data) => {
+    fs.readFile(fontFilePath, (err, data) => {
       if (err) {
         console.log(`Error reading font file: ${fontDir}/${name}.ttf`);
         return reject(err);
       }
-      return resolve(parseFont(data));
+      FONT_CACHE[fontFilePath] = parseFont(data);
+      return resolve(FONT_CACHE[fontFilePath]);
     });
   });
 }

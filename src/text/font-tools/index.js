@@ -45,24 +45,23 @@ export function FontManager(writer) {
     },
 
     registerFont(fontName) {
-      if (this.fonts[fontName]) return Promise.resolve(this.fonts[fontName]);
+      if (this.fonts[fontName]) return this.fonts[fontName];
 
-      return truetype.loadFont(fontName)
+      this.fonts[fontName] = new Promise(resolve => {
+        return truetype.loadFont(fontName)
         .then(font => {
-          if (!this.fonts[fontName]) {
-            const regFont = {
-              type: 'truetype',
-              font,
-              pdfRef: writer.registerFont(fontName),
-              id: truetype.getFontId(++this.fontIdCounter),
-              subset: font.subset(),
-              tag: truetype.getFontSubsetTag(++this.fontSubsetTagCounter),
-            };
-            this.fonts[fontName] = regFont;
-            return regFont;
-          }
-          return this.fonts[fontName];
+          this.fonts[fontName] = {
+            type: 'truetype',
+            font,
+            pdfRef: writer.registerFont(fontName),
+            id: truetype.getFontId(++this.fontIdCounter),
+            subset: font.subset(),
+            tag: truetype.getFontSubsetTag(++this.fontSubsetTagCounter),
+          };
+          resolve(this.fonts[fontName]);
         });
+      });
+      return this.fonts[fontName];
     },
 
     get(fontName) {
