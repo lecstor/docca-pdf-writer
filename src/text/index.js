@@ -15,7 +15,7 @@ import getMeta, { getLineMeta } from './meta';
 export { fontTools, delineate, wrapText, getMeta, getLineMeta };
 
 function leadingGap(size) {
-  return size / 5;
+  return size / 4;
 }
 
 function ensureLeading(opts = {}) {

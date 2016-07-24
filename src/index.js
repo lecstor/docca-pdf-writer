@@ -213,7 +213,7 @@ const pdfWriter = {
 
   setText({ x, y, lines, meta }) {
     const ascent = meta.lines[0].size + meta.lines[0].descent;
-    const Y = this.adjustY(y + ascent + (ascent / 12));
+    const Y = this.adjustY(y + ascent);
     const X = this.adjustX(x);
 
     this.addContent(
