@@ -28,6 +28,10 @@ const {
   XObject, Content, pdfReference, xref,
 } = pdfObjects;
 
+function roundPoints(num) {
+  return Math.round(num);
+}
+
 const pdfWriter = {
   objectIdCounter: 0,
 
@@ -139,8 +143,8 @@ const pdfWriter = {
    */
   addImage({ handle, file }) {
     this.images[handle] = Image({ file })
-      .then(res => {
-        const image = res;
+      .then(result => {
+        const image = result;
         if (image.smask) {
           const smaskObj = this.addOID(XObject.create(image.smask));
           this.writeObject(smaskObj);
@@ -162,9 +166,15 @@ const pdfWriter = {
    * @param {Number} options.y       the vertical position of the bottom left corner of the image
    */
   setImage(handle, { width, height, x, y }) {
-    const yFlip = (this.height - y);
+    const yFlip = roundPoints(this.height - y);
 
-    const ref = Content.image.toString({ name: handle, width, height, x, y: yFlip });
+    const ref = Content.image.toString({
+      name: handle,
+      width: roundPoints(width),
+      height: roundPoints(height),
+      x: roundPoints(x),
+      y: yFlip,
+    });
     this.addContent(ref);
 
     return this.images[handle]
@@ -204,11 +214,11 @@ const pdfWriter = {
   },
 
   adjustX(x) {
-    return x;
+    return roundPoints(x);
   },
 
   adjustY(y) {
-    return this.height - y;
+    return roundPoints(this.height - y);
   },
 
   setText({ x, y, lines, meta }) {
@@ -242,19 +252,21 @@ const pdfWriter = {
     const encodedPaths = _map(paths,
       path => ({
         ...path,
-        color: getColor(path.color || [0, 0, 0]),
+        color: getColor(path.color),
         fillColor: getColor(path.fillColor),
         parts: _map(path.parts, part => {
-          const newY = {};
-          const newX = {};
-          if (_has(part, 'y')) newY.y = this.adjustY(part.y);
-          if (_has(part, 'y2')) newY.y2 = this.adjustY(part.y2);
-          if (_has(part, 'x')) newX.x = this.adjustX(part.x);
-          if (_has(part, 'x2')) newX.x2 = this.adjustX(part.x2);
-          return { ...part, ...newY, ...newX };
+          const newPart = {};
+          if (_has(part, 'y')) newPart.y = this.adjustY(part.y);
+          if (_has(part, 'y2')) newPart.y2 = this.adjustY(part.y2);
+          if (_has(part, 'x')) newPart.x = this.adjustX(part.x);
+          if (_has(part, 'x2')) newPart.x2 = this.adjustX(part.x2);
+          if (_has(part, 'width')) newPart.width = roundPoints(part.width);
+          if (_has(part, 'height')) newPart.height = roundPoints(part.height);
+          return { ...part, ...newPart };
         }),
       })
     );
+    console.log(JSON.stringify({ encodedPaths }, null, 2));
     this.addContent(Content.graphics.toString({ paths: encodedPaths }));
   },
 
@@ -263,8 +275,8 @@ const pdfWriter = {
 
     const y = textY + padTop + _reduce(meta.lines, (total, line, idx) => {
       if (!idx || idx > lineIdx) return total;
-      return total - line.height;
-    }, meta.lines[lineIdx].size + meta.lines[lineIdx].descent);
+      return total - line.height + meta.lines[lineIdx].descent;
+    }, meta.lines[lineIdx].height);
 
     let leadingSpaceWidth = 0;
     let trailingSpaceWidth = 0;
@@ -297,10 +309,14 @@ const pdfWriter = {
       return total + leadingSpaceWidth - padLeft;
     }, textX);
 
+    const halfLineDescent = meta.lines[lineIdx].descent / 2;
     const partWidth = meta.lines[lineIdx].parts[partIdx].width;
     const x2 = x + partWidth - leadingSpaceWidth - trailingSpaceWidth + padLeft + padRight;
-    const y2 = y - meta.lines[lineIdx].size - meta.lines[lineIdx].descent - padTop - padBottom;
-    this.page = Page.addUriLink(this.page, { uri: href, x, y, x2, y2, color, highlight });
+    const y2 = y - meta.lines[lineIdx].height - halfLineDescent / 2 - padTop - padBottom;
+    this.page = Page.addUriLink(
+      this.page,
+      { uri: href, x, y: y + halfLineDescent / 2, x2, y2, color, highlight }
+    );
   },
 
   writeToFile(data) {
