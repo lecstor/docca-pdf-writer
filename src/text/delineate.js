@@ -1,6 +1,6 @@
-import forEach from 'lodash/forEach';
-import remove from 'lodash/remove';
-import map from 'lodash/map';
+import forEach from 'lodash/forEach'
+import remove from 'lodash/remove'
+import map from 'lodash/map'
 
 /**
  * format text style list into lines
@@ -24,23 +24,22 @@ import map from 'lodash/map';
  *    { parts: [{ "font": "noto", "size": 12, "text": "or こんにちは 世界" }] },
  *  ],
  */
-export default function delineateText(content) {
-  const lines = [];
-  let line = [];
+export default function delineateText (content) {
+  const lines = []
+  let line = []
   forEach(content, style => {
-    const styleLines = style.text.split('\n');
+    const styleLines = style.text.split('\n')
     forEach(styleLines, (text, idx) => {
-      line.push({ ...style, text });
+      line.push({ ...style, text })
       if (idx < styleLines.length - 1) {
-        if (line.length > 1) remove(line, { text: '' });
-        lines.push(line);
-        line = [];
+        if (line.length > 1) remove(line, { text: '' })
+        lines.push(line)
+        line = []
       }
-    });
-  });
-  if (line.length > 1) remove(line, { text: '' });
-  if (line.length) lines.push(line);
-  return map(lines, lin => ({ parts: lin }));
+    })
+  })
+  if (line.length > 1) remove(line, { text: '' })
+  if (line.length) lines.push(line)
+  return map(lines, lin => ({ parts: lin }))
 }
-
 

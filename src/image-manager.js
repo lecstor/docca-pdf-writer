@@ -1,18 +1,18 @@
-import _forEach from 'lodash/forEach';
+import _forEach from 'lodash/forEach'
 
-export default function ImageManager(writer) {
+export default function ImageManager (writer) {
   return {
     images: {},
     imageCount: 0,
 
-    addImagesToPdf(images) {
+    addImagesToPdf (images) {
       _forEach(images, img => {
-        const handle = `img${++this.imageCount}`;
+        const handle = `img${++this.imageCount}`
         this.images[img] = {
           handle,
-          image: writer.addImage({ handle, file: img }),
-        };
-      });
-    },
-  };
+          image: writer.addImage({ handle, file: img })
+        }
+      })
+    }
+  }
 }

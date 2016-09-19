@@ -6,24 +6,24 @@
  * @param   {Number} [curves=4]  The number of curves which will be used to make the circle.
  * @returns {Number}             The distance
  */
-function circleCurveCPD(radius, curves = 4) {
-  return radius * (4 / 3) * Math.tan(Math.PI / (2 * curves));
+function circleCurveCPD (radius, curves = 4) {
+  return radius * (4 / 3) * Math.tan(Math.PI / (2 * curves))
 }
 
-function circleTopRight({ x, y, r, d }) {
-  return `${x + d} ${y + r} ${x + r} ${y + d} ${x + r} ${y} c`;
+function circleTopRight ({ x, y, r, d }) {
+  return `${x + d} ${y + r} ${x + r} ${y + d} ${x + r} ${y} c`
 }
 
-function circleBottomRight({ x, y, r, d }) {
-  return `${x + r} ${y - d} ${x + d} ${y - r} ${x} ${y - r} c`;
+function circleBottomRight ({ x, y, r, d }) {
+  return `${x + r} ${y - d} ${x + d} ${y - r} ${x} ${y - r} c`
 }
 
-function circleBottomLeft({ x, y, r, d }) {
-  return `${x - d} ${y - r} ${x - r} ${y - d} ${x - r} ${y} c`;
+function circleBottomLeft ({ x, y, r, d }) {
+  return `${x - d} ${y - r} ${x - r} ${y - d} ${x - r} ${y} c`
 }
 
-function circleTopLeft({ x, y, r, d }) {
-  return `${x - r} ${y + d} ${x - d} ${y + r} ${x} ${y + r} c`;
+function circleTopLeft ({ x, y, r, d }) {
+  return `${x - r} ${y + d} ${x - d} ${y + r} ${x} ${y + r} c`
 }
 
 /**
@@ -34,17 +34,16 @@ function circleTopLeft({ x, y, r, d }) {
  * @returns {String}                 PDF markup
  */
 export default function ({ x, y, radius }) {
-  const d = circleCurveCPD(radius);
-  const r = radius;
+  const d = circleCurveCPD(radius)
+  const r = radius
   return `
 ${x} ${y + r} m
 ${circleTopRight({ x, y, r, d })}
 ${circleBottomRight({ x, y, r, d })}
 ${circleBottomLeft({ x, y, r, d })}
 ${circleTopLeft({ x, y, r, d })}
-`;
+`
 }
-
 
 // export default function({ x, y, radius }) {
 //   const d = circleCurveCPD(radius);
@@ -58,4 +57,4 @@ ${circleTopLeft({ x, y, r, d })}
 // `;
 // }
 
-export { circleCurveCPD, circleTopRight, circleBottomRight, circleBottomLeft, circleTopLeft };
+export { circleCurveCPD, circleTopRight, circleBottomRight, circleBottomLeft, circleTopLeft }

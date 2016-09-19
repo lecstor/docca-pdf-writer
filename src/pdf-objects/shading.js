@@ -1,5 +1,5 @@
 
-import * as objects from './';
+import * as objects from './'
 
 const pdfKeys = [
   'ShadingType', // integer
@@ -20,16 +20,16 @@ const pdfKeys = [
   'Coords',
   'Domain',
   'Function',
-  'Extend',
-];
+  'Extend'
+]
 
-export function create(props) {
-  return objects.init({ type: 'Pattern', shadingtype: 2, pdfKeys, props });
+export function create (props) {
+  return objects.init({ type: 'Pattern', shadingtype: 2, pdfKeys, props })
 }
 
-export function getPdfObject(object) {
-  const pdf = objects.toPdf(object);
+export function getPdfObject (object) {
+  const pdf = objects.toPdf(object)
   return `${objects.getPdfHeadReference(object)}
 ${pdf}
-endobj`;
+endobj`
 }

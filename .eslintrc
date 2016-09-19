@@ -1,12 +1,6 @@
 {
-  "parser": "babel-eslint",
-  "extends": "airbnb",
+  "extends": "standard",
   "env": {
     "node": true
-  },
-  "rules": {
-    "new-cap": 0,
-    "no-underscore-dangle": 0,
-    "no-undef": 2
   }
 }

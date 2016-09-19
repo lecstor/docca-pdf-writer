@@ -1,10 +1,8 @@
 
-import * as objects from '../';
-
-export function toString(object) {
+export function toString (object) {
   return `q
 ${object.width} 0 0 ${object.height} ${object.x} ${object.y - object.height} cm
 /${object.name} Do
-Q\n`;
+Q\n`
 }
 

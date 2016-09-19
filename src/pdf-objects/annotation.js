@@ -1,20 +1,20 @@
 
-import * as objects from './';
+import * as objects from './'
 
 const pdfKeys = [
   'Type', 'Subtype', 'Contents', 'Rect', 'Border', 'BS',
-  'Dest', 'H', 'PA', // Link
-];
+  'Dest', 'H', 'PA' // Link
+]
 
-export function create(props) {
-  return objects.init({ type: 'Annot', pdfKeys, props });
+export function create (props) {
+  return objects.init({ type: 'Annot', pdfKeys, props })
 }
 
-export function getPdfObject(object) {
-  const pdf = objects.toPdf(object);
+export function getPdfObject (object) {
+  const pdf = objects.toPdf(object)
   return `${objects.getPdfHeadReference(object)}
 ${pdf}
-endobj`;
+endobj`
 }
 
 // link = {

@@ -1,26 +1,26 @@
-import _isString from 'lodash/isString';
-import _map from 'lodash/map';
-import _maxBy from 'lodash/maxBy';
-import _merge from 'lodash/merge';
-import _pick from 'lodash/pick';
-import _uniq from 'lodash/uniq';
+import _isString from 'lodash/isString'
+import _map from 'lodash/map'
+import _maxBy from 'lodash/maxBy'
+import _merge from 'lodash/merge'
+import _pick from 'lodash/pick'
+import _uniq from 'lodash/uniq'
 
-import Color from 'onecolor';
+import Color from 'onecolor'
 
-import * as fontTools from './font-tools';
-import delineate from './delineate';
-import wrapText from './wrap';
-import getMeta, { getLineMeta } from './meta';
+import * as fontTools from './font-tools'
+import delineate from './delineate'
+import wrapText from './wrap'
+import getMeta, { getLineMeta } from './meta'
 
-export { fontTools, delineate, wrapText, getMeta, getLineMeta };
+export { fontTools, delineate, wrapText, getMeta, getLineMeta }
 
-function leadingGap(size) {
-  return size / 4;
+function leadingGap (size) {
+  return size / 4
 }
 
-function ensureLeading(opts = {}) {
-  if (opts.leading || !opts.size) return opts;
-  return { ...opts, leading: opts.size + leadingGap(opts.size) };
+function ensureLeading (opts = {}) {
+  if (opts.leading || !opts.size) return opts
+  return { ...opts, leading: opts.size + leadingGap(opts.size) }
 }
 
 /**
@@ -30,12 +30,12 @@ function ensureLeading(opts = {}) {
  *
  * if the specified color is an array it is returned as-is
  */
-export function getColor(color) {
-  if (!color) return undefined;
-  if (!_isString(color)) return color;
-  const col = Color(color);
-  if (!col) return [0, 0, 0];
-  return [col.red(), col.green(), col.blue()];
+export function getColor (color) {
+  if (!color) return undefined
+  if (!_isString(color)) return color
+  const col = Color(color)
+  if (!col) return [0, 0, 0]
+  return [col.red(), col.green(), col.blue()]
 }
 
 /**
@@ -47,8 +47,8 @@ export function getColor(color) {
  * @param   {Object} options.color   color as css name or array of rgb values
  * @returns {[type]}                 [description]
  */
-export function TextBlock(options) {
-  const opts = ensureLeading(options);
+export function TextBlock (options) {
+  const opts = ensureLeading(options)
   return {
     height: undefined,
     width: undefined,
@@ -69,80 +69,80 @@ export function TextBlock(options) {
      * strips of lead were inserted into the forms to increase the vertical distance between lines
      * of type.
      */
-    add(text, textOptions = {}) {
-      const defaultTextOpts = _pick(this, 'font', 'size', 'leading', 'color', 'highlight');
-      const textOpts = _merge({}, defaultTextOpts, ensureLeading(textOptions));
+    add (text, textOptions = {}) {
+      const defaultTextOpts = _pick(this, 'font', 'size', 'leading', 'color', 'highlight')
+      const textOpts = _merge({}, defaultTextOpts, ensureLeading(textOptions))
       this.content.push({
         text,
         ...textOpts,
         color: getColor(textOpts.color),
-        highlight: textOpts.highlight.substring(0, 1),
-      });
-      return this;
+        highlight: textOpts.highlight.substring(0, 1)
+      })
+      return this
     },
 
-    setWidth(width) {
-      this.width = width;
+    setWidth (width) {
+      this.width = width
     },
 
-    loadFontData({ fontManager }) {
-      const fontNames = _map(this.content, part => part.font);
+    loadFontData ({ fontManager }) {
+      const fontNames = _map(this.content, part => part.font)
       return fontManager.registerFonts(fontNames)
         .then(() => {
-          const subsets = fontManager.getSubsets(fontNames);
-          const lines = delineate(this.content);
-          this.meta = getMeta(lines, subsets);
-          return this;
-        });
+          const subsets = fontManager.getSubsets(fontNames)
+          const lines = delineate(this.content)
+          this.meta = getMeta(lines, subsets)
+          return this
+        })
     },
 
-    encodeLines({ lines, fontManager, subsets }) {
+    encodeLines ({ lines, fontManager, subsets }) {
       return _map(lines,
         line => ({
           ...line,
           leading: _maxBy(line.parts, part => part.leading).leading,
           parts: _map(line.parts, part => {
-            fontManager.addCharacters(part.font, part.text);
-            const text = subsets[part.font].encode(part.text).replace(/([\\()])/g, '\\$1');
-            return { ...part, text, font: fontManager.get(part.font).id };
-          }),
+            fontManager.addCharacters(part.font, part.text)
+            const text = subsets[part.font].encode(part.text).replace(/([\\()])/g, '\\$1')
+            return { ...part, text, font: fontManager.get(part.font).id }
+          })
         })
-      );
+      )
     },
 
-    format({ fontManager, width = this.width } = {}) {
-      const fontNames = _uniq(_map(this.content, part => part.font));
+    format ({ fontManager, width = this.width } = {}) {
+      const fontNames = _uniq(_map(this.content, part => part.font))
       return fontManager.registerFonts(fontNames)
         .then(() => {
-          const subsets = fontManager.getSubsets(fontNames);
+          const subsets = fontManager.getSubsets(fontNames)
 
-          let lines = delineate(this.content);
-          let meta = getMeta(lines, subsets);
+          let lines = delineate(this.content)
+          let meta = getMeta(lines, subsets)
           if (width) {
-            lines = wrapText({ width, lines, meta });
-            meta = getMeta(lines, subsets);
+            lines = wrapText({ width, lines, meta })
+            meta = getMeta(lines, subsets)
           }
-          this.meta = meta;
+          this.meta = meta
 
-          this.lines = this.encodeLines({ lines, fontManager, subsets });
+          this.lines = this.encodeLines({ lines, fontManager, subsets })
 
-          const lastLine = meta.lines[meta.lines.length - 1];
-          const top = -meta.lines[0].descent;
-          const bottom = (lastLine.height - lastLine.size) - lastLine.descent;
+          const lastLine = meta.lines[meta.lines.length - 1]
+          const top = -meta.lines[0].descent
+          const bottom = (lastLine.height - lastLine.size) - lastLine.descent
           this.bounding = {
             width: meta.width,
-            height: meta.height - (top + bottom),
-          };
+            height: meta.height - (top + bottom)
+          }
 
-          this.fonts = fontNames;
+          this.fonts = fontNames
 
-          return this;
-        });
+          return this
+        })
     },
 
-    toPojo() {
-      return _pick(this, 'content', 'meta', 'lines', 'bounding', 'fonts');
-    },
+    toPojo () {
+      return _pick(this, 'content', 'meta', 'lines', 'bounding', 'fonts')
+    }
 
-  };
+  }
 }

@@ -1,5 +1,5 @@
 
-import * as objects from './';
+import * as objects from './'
 
 const pdfKeys = [
   'FunctionType', // integer
@@ -11,16 +11,16 @@ const pdfKeys = [
   'Domain', // array
   'C0', // array
   'C1', // array
-  'N', // number
-];
+  'N' // number
+]
 
-export function create(props) {
-  return objects.init({ type: 'Function', functiontype: 2, pdfKeys, props });
+export function create (props) {
+  return objects.init({ type: 'Function', functiontype: 2, pdfKeys, props })
 }
 
-export function getPdfObject(object) {
-  const pdf = objects.toPdf(object);
+export function getPdfObject (object) {
+  const pdf = objects.toPdf(object)
   return `${objects.getPdfHeadReference(object)}
 ${pdf}
-endobj`;
+endobj`
 }
