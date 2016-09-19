@@ -33,7 +33,7 @@ function circleTopLeft({ x, y, r, d }) {
  * @param   {Number} options.radius  radius of circle
  * @returns {String}                 PDF markup
  */
-export default function({ x, y, radius }) {
+export default function ({ x, y, radius }) {
   const d = circleCurveCPD(radius);
   const r = radius;
   return `
