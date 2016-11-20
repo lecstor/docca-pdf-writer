@@ -1,6 +1,6 @@
 {
   "name": "docca-pdf-writer",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "PDF Writer",
   "main": "lib/index.js",
   "scripts": {
