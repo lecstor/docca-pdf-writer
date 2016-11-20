@@ -27,7 +27,7 @@
     "babel-tape-runner": "^2.0.1",
     "eslint": "^3.5.0",
     "eslint-config-standard": "^6.0.1",
-    "eslint-plugin-promise": "^2.0.1",
+    "eslint-plugin-promise": "^3.4.0",
     "eslint-plugin-standard": "^2.0.0",
     "istanbul": "^1.0.0-alpha.2",
     "tap-diff": "^0.1.1",
@@ -41,5 +41,8 @@
     "pngjs": "^2.2.0",
     "read-chunk": "^1.0.1",
     "ttfjs": "^0.4.0"
+  },
+  "publishConfig": {
+    "registry": "http://localhost:8081/repository/lecstor/"
   }
 }
